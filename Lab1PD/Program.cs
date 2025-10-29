@@ -4,9 +4,8 @@
 
 using Lab1PD.Core;
 using Lab1PD.ListADT;
-using System;
 
-namespace LabMain
+namespace Lab1PD
 {
     // Для выбора реализации:
     // using ListImpl = CursorListAdt<string>;
