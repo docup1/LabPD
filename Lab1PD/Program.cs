@@ -8,11 +8,10 @@ using System;
 
 namespace LabMain
 {
-    
-    
     // Для выбора реализации:
-    using ListImpl = CursorListADT<string>;
-    //using ListImpl = DoubleLinkedListADT<string>;
+    // using ListImpl = CursorListAdt<string>;
+
+    using ListImpl = DoubleLinkedListAdt<string>;
 
     internal class Program
     {
@@ -35,6 +34,7 @@ namespace LabMain
                         q = list.Next(q);
                     }
                 }
+
                 p = list.Next(p);
             }
         }
