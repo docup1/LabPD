@@ -36,8 +36,8 @@ namespace Lab1PD
         
         public static void Main()
         {
-            // IListAdt<Person> list = new DoubleLinkedListAdt<Person>();
-            IListAdt<Person> list = new CursorListAdt<Person>();
+            IListAdt<Person> list = new DoubleLinkedListAdt<Person>();
+            // IListAdt<Person> list = new CursorListAdt<Person>();
 
             // Создаём объекты Person (имя до 20 символов, адрес до 50)
             char[] name1 = "Alice".ToCharArray();

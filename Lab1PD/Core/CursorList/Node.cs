@@ -11,8 +11,8 @@ internal class Node<T>
         Next = -1;
     }
  
-    public Node(int i)
-    {
-        Next = i;
-    }
+    // public Node(int i)
+    // {
+    //     Next = i;
+    // }
 }

@@ -28,7 +28,7 @@ namespace Lab1PD.ListADT
         private Node<T>[] _nodes;                   // Основной массив узлов
         private int _space;                         // Индекс первой свободной ячейки ("список свободных")
         private int _head = -1;                            // Индекс первого элемента (-1 = пусто)
-        private readonly Position _End = new Position(-1); // Фиктивная позиция конца списка (используется как маркер)
+        private static readonly Position _End = new Position(-1); // Фиктивная позиция конца списка (используется как маркер)
 
         // --------------------------------------------------------------------
         // Статический конструктор
@@ -152,7 +152,7 @@ namespace Lab1PD.ListADT
                 return;
             }
 
-            // Вставка перед End() → в конец
+            // Вставка перед End() -> в конец 
             if (pos.N == -1)
             {
                 int last = Last();
@@ -199,7 +199,7 @@ namespace Lab1PD.ListADT
                 throw new ArgumentException("Позиция указывает на конец списка");
 
             int current = pos.N;
-            IPosition nextPos = _nodes[current].Next != -1 ? new Position(_nodes[current].Next) : _End;
+            IPosition nextPos = _nodes[current].Next != -1 ? new Position(_nodes[current].Next) : _End; //
 
             // Удаление головы
             if (current == _head)
@@ -230,7 +230,7 @@ namespace Lab1PD.ListADT
             int current = _head;
             while (current != -1)
             {
-                if (_nodes[current].Data.Equals(x))
+                if (_nodes[current].Data!.Equals(x))
                     return new Position(current);
 
                 current = _nodes[current].Next;
@@ -269,7 +269,7 @@ namespace Lab1PD.ListADT
                 return _End;
 
             // Берём узел по позиции
-            Node<T> currentNode = _nodes[pos.N]; // если у тебя массив или список узлов
+            Node<T> currentNode = _nodes[pos.N]; // если массив или список узлов
             if (currentNode == null)
                 throw new ArgumentException("Элемент не найден");
 

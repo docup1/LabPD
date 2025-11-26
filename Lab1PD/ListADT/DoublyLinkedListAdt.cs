@@ -151,7 +151,7 @@ namespace Lab1PD.ListADT
             
             // Вернуть позицию следующего узла (или End(), если конец)
 
-            return pos.Node.Next == null ? End() : new Position<T>(pos.Node.Next);
+            return new Position<T>(pos.Node.Next);
 
         }
 
@@ -228,7 +228,7 @@ namespace Lab1PD.ListADT
             if (p is not Position<T> pos)
                 throw new ArgumentException("Позиция имеет неверный тип.", nameof(p));
 
-            // P == End() → Next() = End()
+            // P == End() -> Next() = End()
             if (pos.Node == null)
                 return End();
 
@@ -259,7 +259,7 @@ namespace Lab1PD.ListADT
             if (pos.Node == null)
                 return _tail == null ? End() : new Position<T>(_tail);
 
-            return pos.Node.Next == null ? End() : new Position<T>(pos.Node.Next);
+            return  new Position<T>(pos.Node.Next);
         }
 
         // ======================== ОБСЛУЖИВАНИЕ ========================
