@@ -1,316 +1,253 @@
 using Lab1PD.Core;
 using Lab1PD.Core.CursorList;
 
-namespace Lab1PD.ListADT;
-
-/// <summary>
-/// Класс <c>CursorListAdt<T></c>
-/// =====================================
-/// Реализация абстрактного типа данных (ADT) "список" с использованием курсоров вместо указателей.
-///
-/// Каждый элемент хранится в статическом массиве <c>_memoryPool</c> фиксированной длины.
-/// Узлы связаны между собой индексами (int), а не ссылками.
-///
-/// Поля:
-/// - <c>_head</c> — индекс первого элемента списка (или -1, если список пуст);
-/// - <c>_space</c> — индекс первой свободной ячейки в пуле памяти;
-/// - <c>_memoryPool</c> — статический массив узлов (Node<T>), представляющий всю "память";
-/// - <c>Length</c> — размер пула памяти.
-///
-/// Принцип:
-/// - Свободные ячейки соединены в "список свободных элементов".
-/// - Занятые ячейки соединены в пользовательский список.
-/// </summary>
-public class CursorListAdt<T> : IListADT<T>
+namespace Lab1PD.ListADT
 {
-// -------------------------------
-// Поля
-// -------------------------------
-    private int _head = -1; // индекс головы списка (-1, если список пуст)
-    private int _space = 0; // индекс первой свободной ячейки
-    private const int Length = 10; // максимальное количество узлов в пуле
-    private static Node<T>[] _memoryPool; // пул памяти (хранилище всех узлов)
-
-    // -------------------------------
-    // Статический конструктор
-    // -------------------------------
-
     /// <summary>
-    /// Инициализация статического пула памяти.
-    /// Все элементы соединяются в цепочку свободных ячеек.
-    /// Последний элемент ссылается на 0 (как конец списка свободных).
+    /// Реализация абстрактного типа данных «Список на курсорах».
+    /// Список работает в статическом массиве узлов, связи — через индексы.
     /// </summary>
-    static CursorListAdt()
+    public class CursorListAdt<T> : IListAdt<T>
     {
-        _memoryPool = new Node<T>[Length];
-        for (int i = 0; i < Length; i++)
-            _memoryPool[i] = new Node<T>(i + 1);
-        _memoryPool[Length - 1] = new Node<T>(0);
-    }
+        private const int MaxSize = 100;
 
-    // -------------------------------
-    // Вспомогательные методы
-    // -------------------------------
+        private Node<T>[] _nodes;  // Пул узлов
+        private int _space;        // Текущая свободная ячейка
+        private int _head = -1;    // Первый элемент списка
+        private readonly Position _End = new Position(-1);
 
-    /// <summary>
-    /// Возвращает индекс узла, который находится **перед** узлом с индексом <paramref name="n"/>.
-    /// Если элемент не найден — возвращает -1.
-    /// </summary>
-    private int GetPrevious(int n)
-    {
-        int curr = _head;
-        int tmp = -1;
-
-        while (curr != -1)
+        public CursorListAdt()
         {
-            if (n == curr)
-                return tmp;
+            _nodes = new Node<T>[MaxSize];
 
-            tmp = curr;
-            curr = _memoryPool[curr].Next;
+            // создаём цепочку свободных узлов: 0 → 1 → 2 → ... → 99 → -1
+            for (int i = 0; i < MaxSize - 1; i++)
+                _nodes[i] = new Node<T> { Next = i + 1 };
+
+            _nodes[MaxSize - 1] = new Node<T> { Next = -1 };
+            _space = 0;
         }
 
-        return -1;
-    }
+        // ============================================================
+        // Вспомогательные методы
+        // ============================================================
 
-    /// <summary>
-    /// Возвращает индекс **предпоследнего** элемента (перед End()).
-    /// Используется для вставки в конец списка.
-    /// </summary>
-    private int GetPreEnd()
-    {
-        int curr = _head;
-        int tmp = -1;
-
-        while (curr != -1)
+        /// <summary>Возвращает индекс последнего элемента.</summary>
+        private int Last()
         {
-            tmp = curr;
-            curr = _memoryPool[curr].Next;
-        }
+            int current = _head;
+            int prev = -1;
 
-        return tmp;
-    }
-
-    /// <summary>
-    /// Поиск узла, содержащего значение <paramref name="x"/>.
-    /// Возвращает объект Position с индексом найденного элемента или -1, если элемент отсутствует.
-    /// </summary>
-    private Position FindElement(T x)
-    {
-        int current = _head;
-
-        while (current != -1)
-        {
-            if (Equals(_memoryPool[current].Data, x))
-                return new Position(current);
-
-            current = _memoryPool[current].Next;
-        }
-
-        return new Position(-1);
-    }
-
-    // -------------------------------
-    // Методы интерфейса IListADT
-    // -------------------------------
-
-    /// <summary>
-    /// Вставляет новый элемент <paramref name="x"/> на позицию <paramref name="p"/>.
-    /// 
-    /// Возможные случаи:
-    ///  - <paramref name="p"/> == -1: вставка в конец (или создание списка);
-    ///  - <paramref name="p"/> == _head: вставка в начало;
-    ///  - вставка в середину списка.
-    /// 
-    /// Использует пул свободных ячеек (<c>_space</c>).
-    /// </summary>
-    public void Insert(T x, int p)
-    {
-        if (_space == -1)
-            throw new Exception("Список полон");
-
-        // Вставка в конец или создание нового списка
-        if (p == -1)
-        {
-            if (_head == -1) // если список пуст
+            while (current != -1)
             {
-                _head = 0;
-                _memoryPool[_head].Data = x;
-                _memoryPool[_head].Next = -1;
-                _space++;
+                prev = current;
+                current = _nodes[current].Next;
+            }
+            return prev;
+        }
+
+        /// <summary>
+        /// Находит предыдущий узел.
+        /// </summary>
+        private int GetPrev(int index)
+        {
+            if (_head == -1) return -2;
+
+            int current = _head;
+            int prev = -1;
+
+            while (current != -1)
+            {
+                if (current == index)
+                    return prev;
+
+                prev = current;
+                current = _nodes[current].Next;
+            }
+
+            return -2;
+        }
+
+        // ============================================================
+        // Операции ADT
+        // ============================================================
+
+        public IPosition End() => _End;
+        public IPosition First() => _head == -1 ? _End : new Position(_head);
+
+        /// <summary>
+        /// Вставка элемента перед позицией p.
+        /// </summary>
+        public void Insert(T x, IPosition p)
+        {
+            if (_space == -1)
+                throw new Exception("Память пула исчерпана");
+
+            int newIndex = _space;            // берём свободный узел
+            _space = _nodes[_space].Next;     // обновляем голову списка свободных
+            _nodes[newIndex].Data = x;
+
+            Position pos = (Position)p;
+
+            // -----------------------------
+            // Вставка в конец
+            // -----------------------------
+
+            if (pos.N == -1)
+            {
+                if (_head == -1)
+                {
+                    // список пуст → новый элемент становится первым
+                    _nodes[newIndex].Next = -1;
+                    _head = newIndex;
+                }
+                else
+                {
+                    // найти последний элемент
+                    int last = Last();
+                    _nodes[newIndex].Next = -1;
+                    _nodes[last].Next = newIndex;
+                }
+                return;
+            }
+
+            // -----------------------------
+            // Вставка перед первым элементом
+            // -----------------------------
+            if (pos.N == _head)
+            {
+                _nodes[newIndex].Next = _head;
+                _head = newIndex;
+                return;
+            }
+
+            // -----------------------------
+            // Вставка в середину
+            // -----------------------------
+
+            int prev = GetPrev(pos.N);
+            if (prev < -1)
+                throw new ArgumentException("Недопустимая позиция");
+
+            _nodes[newIndex].Next = pos.N;
+            _nodes[prev].Next = newIndex;
+        }
+
+        public void Add(T p) => Insert(p, _End);
+
+        /// <summary>Удаляет элемент в позиции p.</summary>
+        public IPosition Delete(IPosition p)
+        {
+            if (_head == -1)
+                throw new ArgumentException("Список пуст");
+
+            Position pos = (Position)p;
+            if (pos.N == -1)
+                throw new ArgumentException("Удаление по End() невозможно");
+
+            int next = _nodes[pos.N].Next;
+            int freed = pos.N;
+
+            // Удаление головы
+            if (pos.N == _head)
+            {
+                _head = next;
             }
             else
             {
-                int last = GetPreEnd();
-                int nextSpace = _memoryPool[_space].Next;
-                _memoryPool[_space].Data = x;
-                _memoryPool[_space].Next = -1;
-                _memoryPool[last].Next = _space;
-                _space = nextSpace;
+                int prev = GetPrev(pos.N);
+                if (prev < 0)
+                    throw new ArgumentException("Элемент не найден");
+
+                _nodes[prev].Next = next;
             }
 
-            return;
+            // Возвращаем узел в пул свободных
+            _nodes[freed].Next = _space;
+            _space = freed;
+
+            return next == -1 ? _End : new Position(next);
         }
 
-        // Вставка перед первым элементом
-        if (p == _head)
+        /// <summary>Ищет элемент x.</summary>
+        public IPosition Locate(T x)
         {
-            int nextSpace = _memoryPool[_space].Next;
-            _memoryPool[_space].Data = x;
-            _memoryPool[_space].Next = _head;
-            _head = _space;
-            _space = nextSpace;
-            return;
+            int cur = _head;
+            while (cur != -1)
+            {
+                if (_nodes[cur].Data != null &&
+                    _nodes[cur].Data.Equals(x))
+                    return new Position(cur);
+
+                cur = _nodes[cur].Next;
+            }
+            return _End;
         }
 
-        // Вставка в середину
-        int prev = GetPrevious(p);
-        if (prev == -1)
-            return;
-
-        int nextFree = _memoryPool[_space].Next;
-        _memoryPool[_space].Data = _memoryPool[p].Data;
-        _memoryPool[_space].Next = -1;
-        _memoryPool[p].Data = x;
-        _memoryPool[p].Next = _space;
-        _space = nextFree;
-    }
-
-    /// <summary>
-    /// Удаляет элемент с индексом <paramref name="p"/>.
-    /// Возвращает ячейку в пул свободных элементов.
-    /// </summary>
-    public void Delete(int p)
-    {
-        if (_head == -1)
-            return;
-
-        // Удаление головы списка
-        if (p == _head)
+        /// <summary>Возвращает данные по позиции.</summary>
+        public T Retrieve(IPosition p)
         {
-            int next = _memoryPool[p].Next;
-            _memoryPool[p].Next = _space;
-            _space = p;
-            _head = next;
-            return;
+            Position pos = (Position)p;
+
+            if (pos.N == -1)
+                throw new ArgumentException("End() не содержит данных");
+
+            return _nodes[pos.N].Data;
         }
 
-        // Удаление в середине
-        int prev = GetPrevious(p);
-        if (prev != -1)
+        public IPosition Next(IPosition p)
         {
-            int current = _memoryPool[prev].Next;
-            _memoryPool[prev].Next = _memoryPool[current].Next;
-            _memoryPool[current].Next = _space;
-            _space = current;
+            Position pos = (Position)p;
+            if (pos.N == -1) return _End;
+
+            int next = _nodes[pos.N].Next;
+            return next == -1 ? _End : new Position(next);
         }
-    }
 
-    /// <summary>
-    /// Возвращает индекс узла, в котором хранится значение <paramref name="x"/>.
-    /// Если элемент не найден, возвращает -1.
-    /// </summary>
-    public int Locate(T x)
-    {
-        var pos = FindElement(x);
-        return pos.N;
-    }
-
-    /// <summary>
-    /// Возвращает значение, хранящееся в узле с индексом <paramref name="p"/>.
-    /// Проверяет корректность позиции.
-    /// </summary>
-    public T Retrieve(int p)
-    {
-        if (p >= _memoryPool.Length)
-            throw new Exception("Неверно выбрана позиция");
-
-        if (GetPrevious(p) != -1 || p == _head)
-            return _memoryPool[p].Data;
-        else
-            throw new Exception("Такой позиции в списке нет");
-    }
-
-    /// <summary>
-    /// Возвращает индекс следующего элемента относительно позиции <paramref name="p"/>.
-    /// </summary>
-    public int Next(int p)
-    {
-        if (p == _head)
-            return _memoryPool[_head].Next;
-
-        int tmpPrev = GetPrevious(p);
-        if (tmpPrev == -1)
-            throw new Exception("Неверно выбрана позиция");
-
-        tmpPrev = _memoryPool[tmpPrev].Next;
-        if (tmpPrev == -1)
-            throw new Exception("Неверно выбрана позиция");
-
-        return _memoryPool[tmpPrev].Next;
-    }
-
-    /// <summary>
-    /// Возвращает индекс предыдущего элемента относительно позиции <paramref name="p"/>.
-    /// </summary>
-    public int Previous(int p)
-    {
-        if (p == -1 || p == _head || p >= _memoryPool.Length)
-            throw new Exception("Неверно выбрана позиция");
-
-        int tmp = GetPrevious(p);
-        if (tmp == -1)
-            throw new Exception("Неверно выбрана позиция");
-
-        return tmp;
-    }
-
-    /// <summary>
-    /// Возвращает фиктивную позицию конца списка (всегда -1).
-    /// </summary>
-    public int End() => -1;
-
-    /// <summary>
-    /// Возвращает индекс первого элемента списка (или -1, если список пуст).
-    /// </summary>
-    public int First() => _head;
-
-    /// <summary>
-    /// Полностью очищает список, возвращая все элементы в пул свободных.
-    /// </summary>
-    public int Makenull()
-    {
-        int temp = GetPreEnd();
-        if (temp != -1)
+        public IPosition Previous(IPosition p)
         {
-            _memoryPool[temp].Next = _space;
+            Position pos = (Position)p;
+
+            if (pos.N == _head)
+                throw new ArgumentException("У первого элемента нет предыдущего");
+
+            int prev = GetPrev(pos.N);
+            if (prev < 0)
+                throw new ArgumentException("Позиция недействительна");
+
+            return new Position(prev);
+        }
+
+        /// <summary>Очищает весь список.</summary>
+        public IPosition Makenull()
+        {
+            if (_head == -1) return _End;
+
+            int last = Last();
+            _nodes[last].Next = _space;
             _space = _head;
+            _head = -1;
+
+            return _End;
         }
 
-        _head = -1;
-        return End();
-    }
-
-    /// <summary>
-    /// Печатает содержимое списка в консоль.
-    /// </summary>
-    public void PrintList()
-    {
-        if (_head == -1)
+        /// <summary>Печатает список.</summary>
+        public void PrintList()
         {
-            Console.WriteLine("Список пуст");
-            return;
-        }
+            if (_head == -1)
+            {
+                Console.WriteLine("Список пуст");
+                return;
+            }
 
-        int temp = _head;
-        int counter = 0;
+            int cur = _head;
+            int i = 1;
 
-        while (temp != -1)
-        {
-            counter++;
-            Console.Write($"{counter}. ");
-            Console.WriteLine(_memoryPool[temp].Data);
-            temp = _memoryPool[temp].Next;
+            while (cur != -1)
+            {
+                Console.WriteLine($"{i++}. {_nodes[cur].Data}");
+                cur = _nodes[cur].Next;
+            }
         }
     }
 }

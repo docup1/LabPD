@@ -1,6 +1,6 @@
 namespace Lab1PD.Core.CursorList;
 
-public class Position
+public class Position : IPosition
 {
     public int N { get; }
 
@@ -8,6 +8,4 @@ public class Position
     {
         N = n;
     }
-
-    public bool Equals(Position p) => N == p.N;
 }

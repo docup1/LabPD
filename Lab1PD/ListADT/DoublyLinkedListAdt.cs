@@ -1,280 +1,315 @@
 using Lab1PD.Core;
 using Lab1PD.Core.DoubleLinkedList;
 
-namespace Lab1PD.ListADT;
-
-/// <summary>
-/// Класс <c>DoubleLinkedListADT&lt;T&gt;</c>
-/// =======================================
-/// Реализация абстрактного типа данных (ADT) «Двусвязный список».
-/// 
-/// Каждый узел хранит:
-///  - данные типа T;
-///  - ссылку на следующий элемент;
-///  - ссылку на предыдущий элемент.
-/// 
-/// Поддерживаются операции вставки, удаления, поиска, перемещения по списку и очистки.
-/// 
-/// Индексация позиций начинается с 1 (а не с 0), в соответствии с формальными определениями ADT-списков.
-/// </summary>
-public class DoubleLinkedListAdt<T> : IListADT<T>
+namespace Lab1PD.ListADT
 {
-    // -------------------------------
-    // Поля
-    // -------------------------------
-
-    private Node<T>? _head; // первый элемент списка
-    private Node<T>? _tail; // последний элемент списка
-    private int _count; // количество элементов в списке
-
-    // -------------------------------
-    // Конструктор
-    // -------------------------------
-
     /// <summary>
-    /// Создаёт пустой двусвязный список.
-    /// </summary>
-    public DoubleLinkedListAdt()
-    {
-        _head = null;
-        _tail = null;
-        _count = 0;
-    }
-
-    // -------------------------------
-    // Основные методы интерфейса IListADT
-    // -------------------------------
-
-    /// <summary>
-    /// Возвращает позицию "конца" списка — фиктивную позицию после последнего элемента.
-    /// Используется для обозначения отсутствия элемента (аналог NULL-позиции).
-    /// </summary>
-    public int End() => _count + 1;
-
-    /// <summary>
-    /// Вставляет элемент <paramref name="x"/> на позицию <paramref name="p"/>.
+    /// Реализация абстрактного типа данных (ADT) «Двусвязный список».
     /// 
-    /// Возможные случаи:
-    ///  - вставка в начало (p == 1);
-    ///  - вставка в конец (p == count + 1);
-    ///  - вставка в середину списка.
+    /// Особенности:
+    /// - Каждый узел хранит ссылку на следующий и предыдущий элементы.
+    /// - Поддерживает операции вставки, удаления, поиска, навигации и очистки.
+    /// - Индексация логически начинается с 1 (для пользователя).
     /// </summary>
-    public void Insert(T x, int p)
+    /// <typeparam name="T">Тип элементов, хранимых в списке.</typeparam>
+    public class DoubleLinkedListAdt<T> : IListAdt<T>
     {
-        if (p < 1 || p > _count + 1)
-            throw new ArgumentException("Недопустимая позиция для вставки");
+        private Node<T>? _head;
+        private Node<T>? _tail;
+        private static readonly Position<T> _End = new Position<T>(null);
 
-        Node<T> newNode = new Node<T>(x);
-
-        // Вставка в начало
-        if (p == 1)
+        /// <summary>
+        /// Создаёт новый пустой двусвязный список.
+        /// </summary>
+        public DoubleLinkedListAdt()
         {
+            _head = null;
+            _tail = null;
+        }
+
+        /// <summary>
+        /// Возвращает фиктивную позицию конца списка (используется как "нулевая" позиция).
+        /// </summary>
+        public IPosition End() => _End;
+
+        /// <summary>
+        /// Возвращает позицию первого элемента в списке.
+        /// Если список пуст, возвращает End().
+        /// </summary>
+        public IPosition First() => new Position<T>(_head);
+
+        // ======================== ОПЕРАЦИИ МОДИФИКАЦИИ ========================
+
+        /// <summary>
+        /// Вставляет элемент <paramref name="x"/> перед позицией <paramref name="p"/>.
+        /// Если p = End(), элемент добавляется в конец списка.
+        /// </summary>
+        /// <param name="x">Добавляемое значение.</param>
+        /// <param name="p">Позиция, перед которой выполняется вставка.</param>
+        /// <exception cref="ArgumentNullException">Если позиция равна null.</exception>
+        /// <exception cref="InvalidOperationException">Если произошла ошибка при вставке.</exception>
+        public void Insert(T x, IPosition p)
+        {
+            if (p == null)
+                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
+
+            // Проверяем, что p действительно является Position<T>
+            if (p is not Position<T> pos)
+                throw new ArgumentException("Переданная позиция имеет неверный тип.", nameof(p));
+
+            Node<T>? node = pos.Node;
+
+            // Создаём новый узел заранее — но ещё не вставляем
+            Node<T> newNode = new Node<T>(x);
+
+            // ---- НАЧИНАЕТСЯ БЛОК ВСТАВКИ ----
+
             if (_head == null)
             {
+                // Вставка в пустой список
                 _head = _tail = newNode;
+                return;
             }
-            else
+
+            if (node == null)
             {
+                // Вставка в конец (перед End)
+                _tail!.Next = newNode;
+                newNode.Previous = _tail;
+                _tail = newNode;
+                return;
+            }
+
+            if (node == _head)
+            {
+                // Вставка в начало
                 newNode.Next = _head;
                 _head.Previous = newNode;
                 _head = newNode;
+                return;
             }
-        }
-        // Вставка в конец
-        else if (p == _count + 1)
-        {
-            if (_tail == null)
-            {
-                _head = _tail = newNode;
-            }
-            else
-            {
-                _tail.Next = newNode;
-                newNode.Previous = _tail;
-                _tail = newNode;
-            }
-        }
-        // Вставка в середину списка
-        else
-        {
-            var current = GetNodeAt(p);
-            if (current == null) return;
 
-            var prev = current.Previous;
+            // Вставка в середину
+            Node<T>? prev = node.Previous;
+            newNode.Next = node;
+            newNode.Previous = prev;
+            node.Previous = newNode;
             if (prev != null)
                 prev.Next = newNode;
-
-            newNode.Previous = prev;
-            newNode.Next = current;
-            current.Previous = newNode;
         }
 
-        _count++;
-    }
 
-    /// <summary>
-    /// Находит позицию первого вхождения элемента <paramref name="x"/>.
-    /// Если элемент не найден — возвращает End().
-    /// </summary>
-    public int Locate(T x)
-    {
-        var current = _head;
-        int pos = 1;
-
-        while (current != null)
+        /// <summary>
+        /// Вставляет элемент <paramref name="p"/> в конец списка./>.
+        /// </summary>
+        /// <param name="p">Добавляемое значение.</param>
+        public void Add(T p) => Insert(p, _End);
+        
+        
+        public IPosition Delete(IPosition p)
         {
-            if (Equals(current.Data, x))
-                return pos;
-            current = current.Next;
-            pos++;
+            if (p == null)
+                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
+
+            // Проверка, что позиция принадлежит этому списку и имеет корректный тип
+            if (p is not Position<T> pos)
+                throw new ArgumentException("Позиция не принадлежит списку.", nameof(p));
+
+            Node<T>? node = pos.Node;
+            if (node == null)
+                throw new ArgumentException("Позиция недействительна и не принадлежит списку.", nameof(p));
+
+            Node<T>? nextNode = node.Next;
+
+            // ---- НАЧИНАЕТСЯ БЛОК УДАЛЕНИЯ ----
+
+            // Удаление единственного элемента
+            if (node == _head && node == _tail)
+            {
+                _head = _tail = null;
+            }
+            // Удаление первого
+            else if (node == _head)
+            {
+                _head = _head!.Next;
+                _head!.Previous = null;
+            }
+            // Удаление последнего
+            else if (node == _tail)
+            {
+                _tail = _tail!.Previous;
+                _tail!.Next = null;
+            }
+            // Удаление из середины
+            else
+            {
+                Node<T>? prev = node.Previous;
+                Node<T>? next = node.Next;
+                prev!.Next = next;
+                next!.Previous = prev;
+            }
+            
+            // Вернуть позицию следующего узла (или End(), если конец)
+
+            return pos.Node.Next == null ? End() : new Position<T>(pos.Node.Next);
+
         }
 
-        return End();
-    }
 
-    /// <summary>
-    /// Возвращает значение элемента, находящегося на позиции <paramref name="p"/>.
-    /// </summary>
-    public T Retrieve(int p)
-    {
-        if (p < 1 || p > _count)
-            throw new ArgumentException("Недопустимая позиция");
+        // ======================== ОПЕРАЦИИ ДОСТУПА ========================
 
-        var node = GetNodeAt(p);
-        return node != null ? node.Data! : default!;
-    }
-
-    /// <summary>
-    /// Удаляет элемент, находящийся на позиции <paramref name="p"/>.
-    /// После удаления связи корректируются.
-    /// </summary>
-    public void Delete(int p)
-    {
-        if (p < 1 || p > _count)
-            throw new ArgumentException("Недопустимая позиция");
-
-        var current = GetNodeAt(p);
-        if (current == null) return;
-
-        // Случай 1: в списке один элемент
-        if (_head == _tail && current == _head)
+        /// <summary>
+        /// Возвращает значение элемента в позиции <paramref name="p"/>.
+        /// </summary>
+        /// <param name="p">Позиция, откуда нужно получить значение.</param>
+        /// <returns>Значение элемента типа T.</returns>
+        /// <exception cref="ArgumentNullException">Если позиция равна null.</exception>
+        /// <exception cref="ArgumentException">Если позиция недопустима или указывает на конец списка.</exception>
+        public T Retrieve(IPosition p)
         {
-            _head = _tail = null;
+            if (p == null)
+                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
+
+            if (p is not Position<T> pos)
+                throw new ArgumentException("Переданная позиция имеет неверный тип.", nameof(p));
+
+            if (pos.Node == null)
+                throw new ArgumentException("Невозможно получить значение из позиции End() или недействительной позиции.", nameof(p));
+
+            return pos.Node.Data!;
         }
-        // Случай 2: удаление головы
-        else if (current == _head)
+
+
+
+        /// <summary>
+        /// Находит позицию первого элемента, значение которого равно <paramref name="x"/>.
+        /// </summary>
+        /// <param name="x">Искомое значение.</param>
+        /// <returns>Позиция найденного элемента или End(), если элемент не найден.</returns>
+        public IPosition Locate(T x)
         {
-            _head = _head.Next;
-            if (_head != null)
-                _head.Previous = null;
+            if (_head == null)
+            {
+                // Список пустой, сразу возвращаем End()
+                return End();
+            }
+
+            Node<T>? current = _head;
+
+            // Проходим по всем узлам
+            while (current != null)
+            {
+                if (Equals(current.Data, x))
+                {
+                    // Элемент найден, возвращаем его позицию
+                    return new Position<T>(current);
+                }
+
+                current = current.Next;
+            }
+
+            // Элемент не найден
+            return End();
         }
-        // Случай 3: удаление хвоста
-        else if (current == _tail)
+
+
+        // ======================== НАВИГАЦИЯ ========================
+
+        /// <summary>
+        /// Возвращает позицию следующего элемента после <paramref name="p"/>.
+        /// </summary>
+        /// <param name="p">Текущая позиция.</param>
+        /// <returns>Следующая позиция или End(), если достигнут конец списка.</returns>
+        public IPosition Next(IPosition p)
         {
-            _tail = _tail.Previous;
-            if (_tail != null)
-                _tail.Next = null;
+            if (p == null)
+                throw new ArgumentNullException(nameof(p));
+
+            if (p is not Position<T> pos)
+                throw new ArgumentException("Позиция имеет неверный тип.", nameof(p));
+
+            // P == End() → Next() = End()
+            if (pos.Node == null)
+                return End();
+
+            // Если следующий узел отсутствует → возвращаем End()
+            if (pos.Node.Next == null)
+                return End();
+
+            return new Position<T>(pos.Node.Next);
         }
-        // Случай 4: удаление из середины
-        else
+
+
+
+        /// <summary>
+        /// Возвращает позицию предыдущего элемента перед <paramref name="p"/>.
+        /// </summary>
+        /// <param name="p">Текущая позиция.</param>
+        /// <returns>Предыдущая позиция или End(), если элемент первый.</returns>
+        public IPosition Previous(IPosition p)
         {
-            var prev = current.Previous;
-            var next = current.Next;
-            if (prev != null) prev.Next = next;
-            if (next != null) next.Previous = prev;
+            if (p == null)
+                throw new ArgumentNullException(nameof(p));
+
+            Position<T>? pos = p as Position<T>;
+            if (pos == null)
+                throw new ArgumentException("Позиция имеет неверный тип.", nameof(p));
+
+            // Если позиция = End(), возвращаем хвост (последний элемент)
+            if (pos.Node == null)
+                return _tail == null ? End() : new Position<T>(_tail);
+
+            return pos.Node.Next == null ? End() : new Position<T>(pos.Node.Next);
         }
 
-        _count--;
-    }
+        // ======================== ОБСЛУЖИВАНИЕ ========================
 
-    /// <summary>
-    /// Возвращает позицию следующего элемента.
-    /// Если элемент последний, возвращает End().
-    /// </summary>
-    public int Next(int p)
-    {
-        if (p < 1 || p > _count)
-            throw new ArgumentException("Неправильная позиция");
-
-        return (p == _count) ? End() : p + 1;
-    }
-
-    /// <summary>
-    /// Возвращает позицию предыдущего элемента.
-    /// Если элемент первый — выбрасывает исключение.
-    /// </summary>
-    public int Previous(int p)
-    {
-        if (p < 1 || p > _count)
-            throw new ArgumentException("Неправильная позиция");
-
-        if (p == 1)
-            throw new InvalidOperationException("Перед первой позицией ничего нет");
-
-        return p - 1;
-    }
-
-    /// <summary>
-    /// Полностью очищает список.
-    /// Возвращает фиктивную позицию конца (End()).
-    /// </summary>
-    public int Makenull()
-    {
-        _head = null;
-        _tail = null;
-        _count = 0;
-        return End();
-    }
-
-    /// <summary>
-    /// Возвращает позицию первого элемента списка.
-    /// Если список пуст — возвращает End().
-    /// </summary>
-    public int First()
-    {
-        return (_count > 0) ? 1 : End();
-    }
-
-    /// <summary>
-    /// Печатает содержимое списка в консоль.
-    /// Каждый элемент выводится с индексом.
-    /// </summary>
-    public void PrintList()
-    {
-        if (_head == null)
+        /// <summary>
+        /// Полностью очищает список, удаляя все элементы.
+        /// </summary>
+        /// <returns>Фиктивную позицию End().</returns>
+        public IPosition Makenull()
         {
-            Console.WriteLine("Список пуст.");
-            return;
+            // Если список уже пуст, возвращаем End()
+            if (_head == null && _tail == null)
+                return End();
+
+            // Очищаем список
+            _head = null;
+            _tail = null;
+
+            // Возвращаем фиктивную позицию End()
+            return End();
         }
 
-        var current = _head;
-        int i = 1;
 
-        while (current != null)
+        /// <summary>
+        /// Печатает содержимое списка в консоль.
+        /// Используется для отладки и визуальной проверки.
+        /// </summary>
+        public void PrintList()
         {
-            Console.WriteLine($"{i}. {current.Data}");
-            current = current.Next;
-            i++;
+            try
+            {
+                if (_head == null)
+                {
+                    Console.WriteLine("Список пуст.");
+                    return;
+                }
+
+                Node<T>? current = _head;
+                int i = 1;
+                while (current != null)
+                {
+                    Console.WriteLine($"{i}. {current.Data}");
+                    current = current.Next;
+                    i++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при выводе списка: {ex.Message}");
+            }
         }
-    }
-
-    // -------------------------------
-    // Вспомогательные методы
-    // -------------------------------
-
-    /// <summary>
-    /// Возвращает ссылку на узел, находящийся на заданной позиции.
-    /// Если позиция некорректна — возвращает null.
-    /// </summary>
-    private Node<T>? GetNodeAt(int position)
-    {
-        if (position < 1 || position > _count)
-            return null;
-
-        var current = _head;
-        for (int i = 1; i < position; i++)
-            current = current?.Next;
-
-        return current;
     }
 }
