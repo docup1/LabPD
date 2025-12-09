@@ -134,40 +134,50 @@ namespace Lab1PD.ListADT
         /// <exception cref="Exception">Если память пула исчерпана.</exception>
         public void Insert(T x, IPosition p)
         {
-            // проверка является ли аозиция после последнего
-            // // - список пустой  _head == -1 - вставить первый элемент
-            // // - вставка после последнего - дойти до конца списка(отдельны метод Last) произвести вставку
+            // Проверка, что позиция существует в списке
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Недопустимая позиция для вставки");
             
-            // Проверить является равна ли позиция head (GetPrev)
-            // // - 
-                
+            if (p == null)
+                throw new ArgumentException("Недопустимая позиция");
+            
+            // Проверка исчерпания памяти
             if (_space == -1)
                 throw new Exception("Память пула исчерпана");
-            if (p == null)
-                throw new Exception("Недопустимая позиция");
-            
-            Position pos = (Position)p;
+    
+            // Выделение памяти для нового узла
             int newIndex = _space;
             _space = _nodes[_space].Next;
-
+    
+            // Инициализация нового узла
             _nodes[newIndex].Data = x;
             _nodes[newIndex].Next = -1;
-
-            // Вставка перед End() -> в конец 
+    
+            Position pos = (Position)p;
+            
+            // Вставка в конец (перед End())
             if (pos.N == -1)
             {
-                int last = Last();
-                _nodes[last].Next = newIndex;
+                // Если список пустой
+                if (_head == -1)
+                {
+                    _head = newIndex;
+                }
+                else
+                {
+                    // Найти последний элемент
+                    int last = Last();
+                    _nodes[last].Next = newIndex;
+                }
                 return;
             }
-            
-            // Вставка в пустой список
+    
+            // Вставка в пустой список (с проверкой на End() выше, здесь это обычная позиция)
             if (_head == -1)
             {
-                _head = newIndex;
-                return;
+                throw new ArgumentException("Недопустимая позиция для пустого списка");
             }
-
+    
             // Вставка перед головой
             if (pos.N == _head)
             {
@@ -175,12 +185,12 @@ namespace Lab1PD.ListADT
                 _head = newIndex;
                 return;
             }
-
+    
             // Вставка перед произвольным элементом
             int prev = GetPrev(pos.N);
             if (prev < 0)
                 throw new ArgumentException("Недопустимая позиция для вставки");
-
+    
             _nodes[newIndex].Next = pos.N;
             _nodes[prev].Next = newIndex;
         }
@@ -199,10 +209,15 @@ namespace Lab1PD.ListADT
         /// </summary>
         public IPosition Delete(IPosition p)
         {
+            // Проверка, что позиция существует в списке
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Недопустимая позиция для вставки");
+            
             Position pos = (Position)p;
-
+            
             if (_head == -1)
                 throw new ArgumentException("Список пуст");
+            
             if (pos.N == -1)
                 throw new ArgumentException("Позиция указывает на конец списка");
 
@@ -251,6 +266,10 @@ namespace Lab1PD.ListADT
         /// </summary>
         public T Retrieve(IPosition p)
         {
+            // Проверка, что позиция существует в списке
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Недопустимая позиция для вставки");
+            
             Position pos = (Position)p;
 
             if (_head == -1)
@@ -267,6 +286,10 @@ namespace Lab1PD.ListADT
 
         public IPosition Next(IPosition p)
         {
+            // Проверка, что позиция существует в списке
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Недопустимая позиция для вставки");
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p));
 
@@ -293,6 +316,10 @@ namespace Lab1PD.ListADT
         /// </summary>
         public IPosition Previous(IPosition p)
         {
+            // Проверка, что позиция существует в списке
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Недопустимая позиция для вставки");
+            
             Position pos = (Position)p;
 
             if (_head == -1)

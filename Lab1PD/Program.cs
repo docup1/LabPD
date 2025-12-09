@@ -36,6 +36,7 @@ namespace Lab1PD
         
         public static void Main()
         {
+
             // IListAdt<Person> list = new DoubleLinkedListAdt<Person>();
             IListAdt<Person> list = new CursorListAdt<Person>();
 
@@ -66,6 +67,8 @@ namespace Lab1PD
 
             Console.WriteLine("After:");
             list.PrintList();
+            
+            
         }
     }
 }
