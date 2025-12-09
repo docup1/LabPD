@@ -25,8 +25,8 @@ namespace Lab1PD.ListADT
         // --------------------------------------------------------------------
 
         private const int MaxSize = 100;                   // Максимальное количество узлов в списке
-        private Node<T>[] _nodes;                   // Основной массив узлов
-        private int _space;                         // Индекс первой свободной ячейки ("список свободных")
+        private static Node<T>[] _nodes;                   // Основной массив узлов
+        private static int _space = 0;                     // Индекс первой свободной ячейки ("список свободных")
         private int _head = -1;                            // Индекс первого элемента (-1 = пусто)
         private static readonly Position _End = new Position(-1); // Фиктивная позиция конца списка (используется как маркер)
 
@@ -41,7 +41,7 @@ namespace Lab1PD.ListADT
         /// каждый узел ссылается на следующий по индексу, а последний — на <c>-1</c>.
         /// </summary>
 
-        public CursorListAdt()
+        static CursorListAdt()
         {
             _nodes = new Node<T>[MaxSize];
 
@@ -50,7 +50,6 @@ namespace Lab1PD.ListADT
                 _nodes[i] = new Node<T> { Next = i + 1 };
 
             _nodes[MaxSize - 1] = new Node<T> { Next = -1 };
-            _space = 0;
         }
 
 
@@ -135,9 +134,18 @@ namespace Lab1PD.ListADT
         /// <exception cref="Exception">Если память пула исчерпана.</exception>
         public void Insert(T x, IPosition p)
         {
+            // проверка является ли аозиция после последнего
+            // // - список пустой  _head == -1 - вставить первый элемент
+            // // - вставка после последнего - дойти до конца списка(отдельны метод Last) произвести вставку
+            
+            // Проверить является равна ли позиция head (GetPrev)
+            // // - 
+                
             if (_space == -1)
                 throw new Exception("Память пула исчерпана");
-
+            if (p == null)
+                throw new Exception("Недопустимая позиция");
+            
             Position pos = (Position)p;
             int newIndex = _space;
             _space = _nodes[_space].Next;
@@ -145,18 +153,18 @@ namespace Lab1PD.ListADT
             _nodes[newIndex].Data = x;
             _nodes[newIndex].Next = -1;
 
-            // Вставка в пустой список
-            if (_head == -1)
-            {
-                _head = newIndex;
-                return;
-            }
-
             // Вставка перед End() -> в конец 
             if (pos.N == -1)
             {
                 int last = Last();
                 _nodes[last].Next = newIndex;
+                return;
+            }
+            
+            // Вставка в пустой список
+            if (_head == -1)
+            {
+                _head = newIndex;
                 return;
             }
 
@@ -345,5 +353,33 @@ namespace Lab1PD.ListADT
             }
         }
 
+        /// <summary>
+        /// Проверяет, принадлежит ли указанная позиция текущему списку.
+        /// Проходит по всем узлам и ищет совпадение.
+        /// </summary>
+        /// <param name="p">Позиция, которую необходимо проверить.</param>
+        /// <returns>
+        /// true — если позиция указывает на существующий узел в списке; 
+        /// false — если позиция недействительна или не принадлежит списку.
+        /// </returns>
+        private bool ValidatePosition(IPosition p)
+        {
+            if (p == null || !(p is Position pos))
+                return false;
+    
+            if (pos.N == -1 || p.Equals(_End))
+                return true;
+    
+            // Проверяем, что позиция действительно находится в списке
+            int current = _head;
+            while (current != -1)
+            {
+                if (current == pos.N)
+                    return true;
+                current = _nodes[current].Next;
+            }
+            return false;
+        }
+        
     }
 }

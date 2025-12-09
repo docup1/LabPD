@@ -16,7 +16,7 @@ namespace Lab1PD.ListADT
     {
         private Node<T>? _head;
         private Node<T>? _tail;
-        private static readonly Position<T> _End = new Position<T>(null);
+        private static readonly Position<T> _End = new Position<T>(null!);
 
         /// <summary>
         /// Создаёт новый пустой двусвязный список.
@@ -50,54 +50,61 @@ namespace Lab1PD.ListADT
         /// <exception cref="InvalidOperationException">Если произошла ошибка при вставке.</exception>
         public void Insert(T x, IPosition p)
         {
+            // --- Проверяем корректность позиции ---
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
 
-            // Проверяем, что p действительно является Position<T>
             if (p is not Position<T> pos)
                 throw new ArgumentException("Переданная позиция имеет неверный тип.", nameof(p));
 
-            Node<T>? node = pos.Node;
-
-            // Создаём новый узел заранее — но ещё не вставляем
+            Node<T>? target = pos.Node;
             Node<T> newNode = new Node<T>(x);
 
-            // ---- НАЧИНАЕТСЯ БЛОК ВСТАВКИ ----
-
+            // =====================================================================
+            //                        1. ВСТАВКА В ПУСТОЙ СПИСОК
+            // =====================================================================
             if (_head == null)
             {
-                // Вставка в пустой список
                 _head = _tail = newNode;
                 return;
             }
 
-            if (node == null)
+            // =====================================================================
+            //            2. target == null → это End() → вставка В КОНЕЦ
+            // =====================================================================
+            if (target == null)
             {
-                // Вставка в конец (перед End)
                 _tail!.Next = newNode;
                 newNode.Previous = _tail;
                 _tail = newNode;
                 return;
             }
 
-            if (node == _head)
+            // =====================================================================
+            //            3. ВСТАВКА ПЕРЕД ПЕРВЫМ ЭЛЕМЕНТОМ (_head)
+            // =====================================================================
+            if (target == _head)
             {
-                // Вставка в начало
                 newNode.Next = _head;
                 _head.Previous = newNode;
                 _head = newNode;
                 return;
             }
 
-            // Вставка в середину
-            Node<T>? prev = node.Previous;
-            newNode.Next = node;
-            newNode.Previous = prev;
-            node.Previous = newNode;
-            if (prev != null)
-                prev.Next = newNode;
-        }
+            // =====================================================================
+            //                       4. ВСТАВКА В СЕРЕДИНУ
+            // =====================================================================
+            Node<T>? prev = target.Previous;
 
+            newNode.Next = target;
+            newNode.Previous = prev;
+
+            prev!.Next = newNode;
+            target.Previous = newNode;
+        }
 
         /// <summary>
         /// Вставляет элемент <paramref name="p"/> в конец списка./>.
@@ -108,6 +115,11 @@ namespace Lab1PD.ListADT
         
         public IPosition Delete(IPosition p)
         {
+            // --- Проверяем корректность позиции ---
+            // End() допускается (добавление в конец)
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
 
@@ -116,10 +128,6 @@ namespace Lab1PD.ListADT
                 throw new ArgumentException("Позиция не принадлежит списку.", nameof(p));
 
             Node<T>? node = pos.Node;
-            if (node == null)
-                throw new ArgumentException("Позиция недействительна и не принадлежит списку.", nameof(p));
-
-            Node<T>? nextNode = node.Next;
 
             // ---- НАЧИНАЕТСЯ БЛОК УДАЛЕНИЯ ----
 
@@ -150,8 +158,9 @@ namespace Lab1PD.ListADT
             }
             
             // Вернуть позицию следующего узла (или End(), если конец)
-
-            return new Position<T>(pos.Node.Next);
+            // Нужно получить следующий узел ДО удаления
+            Node<T>? nextNode = pos.Node.Next;
+            return new Position<T>(nextNode); // Если nextNode == null, будет End()
 
         }
 
@@ -167,6 +176,11 @@ namespace Lab1PD.ListADT
         /// <exception cref="ArgumentException">Если позиция недопустима или указывает на конец списка.</exception>
         public T Retrieve(IPosition p)
         {
+            // --- Проверяем корректность позиции ---
+            // End() допускается (добавление в конец)
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
 
@@ -222,6 +236,11 @@ namespace Lab1PD.ListADT
         /// <returns>Следующая позиция или End(), если достигнут конец списка.</returns>
         public IPosition Next(IPosition p)
         {
+            // --- Проверяем корректность позиции ---
+            // End() допускается (добавление в конец)
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p));
 
@@ -248,6 +267,10 @@ namespace Lab1PD.ListADT
         /// <returns>Предыдущая позиция или End(), если элемент первый.</returns>
         public IPosition Previous(IPosition p)
         {
+            // --- Проверяем корректность позиции ---
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            
             if (p == null)
                 throw new ArgumentNullException(nameof(p));
 
@@ -258,8 +281,8 @@ namespace Lab1PD.ListADT
             // Если позиция = End(), возвращаем хвост (последний элемент)
             if (pos.Node == null)
                 return _tail == null ? End() : new Position<T>(_tail);
-
-            return  new Position<T>(pos.Node.Next);
+    
+            return new Position<T>(pos.Node.Previous); 
         }
 
         // ======================== ОБСЛУЖИВАНИЕ ========================
@@ -311,5 +334,39 @@ namespace Lab1PD.ListADT
                 Console.WriteLine($"Ошибка при выводе списка: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Проверяет, принадлежит ли указанная позиция текущему списку.
+        /// Проходит по всем узлам и ищет совпадение.
+        /// </summary>
+        /// <param name="p">Позиция, которую необходимо проверить.</param>
+        /// <returns>
+        /// true — если позиция указывает на существующий узел в списке; 
+        /// false — если позиция недействительна или не принадлежит списку.
+        /// </returns>
+        private bool ValidatePosition(IPosition p)
+        {
+            // Проверка типа
+            if (p is not Position<T> pos)
+                return false;
+
+            Node<T>? target = pos.Node;
+    
+            // End() всегда допустимая позиция для этого списка
+            if (target == null && p == _End)
+                return true;
+
+            // Проход по списку
+            Node<T>? current = _head;
+            while (current != null)
+            {
+                if (current == target)
+                    return true;
+
+                current = current.Next;
+            }
+
+            return false;
+        }
+
     }
 }

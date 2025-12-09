@@ -1,11 +1,13 @@
-using System;
 
 namespace Lab1PD.Core
 {
     public class Person
     {
-        private char[] name; // 20
-        private char[] adr;  // 50
+        private const int NameSize = 20;
+        private const int AdrSize = 50;
+        
+        private char[] _name; 
+        private char[] _adr; 
 
         // Конструктор с копированием массивов и ограничением длины
         public Person(char[] name, char[] adr)
@@ -13,17 +15,22 @@ namespace Lab1PD.Core
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (adr == null) throw new ArgumentNullException(nameof(adr));
 
-            if (name.Length > 20)
+            if (name.Length > NameSize)
                 throw new ArgumentException("Имя не может быть длиннее 20 символов", nameof(name));
-            if (adr.Length > 50)
+            if (adr.Length > AdrSize)
                 throw new ArgumentException("Адрес не может быть длиннее 50 символов", nameof(adr));
 
-            // Копируем массивы в новые массивы фиксированной длины
-            this.name = new char[20];
-            Array.Copy(name, this.name, name.Length);
-
-            this.adr = new char[50];
-            Array.Copy(adr, this.adr, adr.Length);
+            // Копируем массив name вручную
+            _name = new char[NameSize];
+            for (int i = 0; i < name.Length && i < NameSize; i++)
+            {
+                _name[i] = name[i];
+            }
+            _adr = new char[AdrSize];
+            for (int i = 0; i < adr.Length && i < AdrSize; i++)
+            {
+                _adr[i] = adr[i];
+            }
         }
 
         // Переопределяем Equals для сравнения содержимого массивов
@@ -33,16 +40,16 @@ namespace Lab1PD.Core
                 return false;
 
             // Сравниваем name
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < NameSize; i++)
             {
-                if (this.name[i] != other.name[i])
+                if (_name[i] != other._name[i])
                     return false;
             }
 
             // Сравниваем adr
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < AdrSize; i++)
             {
-                if (this.adr[i] != other.adr[i])
+                if (_adr[i] != other._adr[i])
                     return false;
             }
 
@@ -51,7 +58,7 @@ namespace Lab1PD.Core
 
         public override string ToString()
         {
-            return $"Name: {new string(name).TrimEnd('\0')}, Address: {new string(adr).TrimEnd('\0')}";
+            return $"Name: {new string(_name).TrimEnd('\0')}, Address: {new string(_adr).TrimEnd('\0')}";
         }
     }
 }
