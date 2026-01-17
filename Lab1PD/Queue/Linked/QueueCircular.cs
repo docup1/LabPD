@@ -1,3 +1,5 @@
+using Lab1PD.Core;
+
 namespace Lab1PD.Queue.Circular
 {
     /// <summary>
@@ -9,7 +11,7 @@ namespace Lab1PD.Queue.Circular
     /// а его Next — на первый (начало очереди).
     /// </summary>
     /// <typeparam name="T">Тип элементов, хранящихся в очереди.</typeparam>
-    public class QueueCircularAdt<T>
+    public class QueueCircular<T> : IQueue<T>
     {
         /// <summary>
         /// Внутренний класс, представляющий элемент очереди (узел).
@@ -34,7 +36,7 @@ namespace Lab1PD.Queue.Circular
         /// Конструктор. Создает пустую очередь заданной ёмкости.
         /// </summary>
         /// <param name="capacity">Максимальное количество элементов.</param>
-        public QueueCircularAdt(int capacity)
+        public QueueCircular(int capacity)
         {
             _capacity = capacity;
             _rear = null;
