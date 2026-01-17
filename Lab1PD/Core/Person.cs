@@ -1,64 +1,67 @@
-
 namespace Lab1PD.Core
 {
     public class Person
     {
         private const int NameSize = 20;
         private const int AdrSize = 50;
+        private const char TerminalElement = '\0';
         
-        private char[] _name; 
-        private char[] _adr; 
+        private readonly char[] _name;
+        private readonly char[] _adr;
 
-        // Конструктор с копированием массивов и ограничением длины
         public Person(char[] name, char[] adr)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (adr == null) throw new ArgumentNullException(nameof(adr));
 
-            if (name.Length > NameSize)
+            int nameLen = name.Length;
+            int adrLen = adr.Length;
+            
+            if (nameLen > NameSize)
                 throw new ArgumentException("Имя не может быть длиннее 20 символов", nameof(name));
-            if (adr.Length > AdrSize)
+
+            if (adrLen > AdrSize)
                 throw new ArgumentException("Адрес не может быть длиннее 50 символов", nameof(adr));
 
-            // Копируем массив name вручную
-            _name = new char[NameSize];
-            for (int i = 0; i < name.Length && i < NameSize; i++)
-            {
-                _name[i] = name[i];
-            }
-            _adr = new char[AdrSize];
-            for (int i = 0; i < adr.Length && i < AdrSize; i++)
-            {
-                _adr[i] = adr[i];
-            }
+            _name = new char[nameLen + 1];
+            _adr = new char[adrLen + 1];
+
+            // Копируем имя
+            Array.Copy(name, _name, nameLen);
+            _name[nameLen] = TerminalElement;
+
+            // Копируем адрес
+            Array.Copy(adr, _adr, adrLen);
+            _adr[adrLen] = TerminalElement;
         }
 
-        // Переопределяем Equals для сравнения содержимого массивов
         public override bool Equals(object? obj)
         {
             if (obj is not Person other)
                 return false;
 
-            // Сравниваем name
-            for (int i = 0; i < NameSize; i++)
-            {
+            // Сначала проверяем размеры массивов
+            if (_name.Length != other._name.Length || _adr.Length != other._adr.Length)
+                return false;
+
+            // Сравниваем содержимое имени
+            for (int i = 0; i < _name.Length; i++)
                 if (_name[i] != other._name[i])
                     return false;
-            }
 
-            // Сравниваем adr
-            for (int i = 0; i < AdrSize; i++)
-            {
+            // Сравниваем содержимое адреса
+            for (int i = 0; i < _adr.Length; i++)
                 if (_adr[i] != other._adr[i])
                     return false;
-            }
 
             return true;
         }
 
         public override string ToString()
         {
-            return $"Name: {new string(_name).TrimEnd('\0')}, Address: {new string(_adr).TrimEnd('\0')}";
+            string nameStr = new string(_name).TrimEnd(TerminalElement);
+            string adrStr  = new string(_adr).TrimEnd(TerminalElement);
+            return $"Name: {nameStr}, Address: {adrStr}";
         }
     }
 }

@@ -4,23 +4,15 @@ using Lab1PD.Core.DoubleLinkedList;
 namespace Lab1PD.ListADT
 {
     /// <summary>
-    /// Реализация абстрактного типа данных (ADT) «Двусвязный список».
-    /// 
-    /// Особенности:
-    /// - Каждый узел хранит ссылку на следующий и предыдущий элементы.
-    /// - Поддерживает операции вставки, удаления, поиска, навигации и очистки.
-    /// - Индексация логически начинается с 1 (для пользователя).
+    /// Реализация ADT «Двусвязный список» с использованием логики перестановки данных при вставке.
     /// </summary>
-    /// <typeparam name="T">Тип элементов, хранимых в списке.</typeparam>
+    /// <typeparam name="T">Тип хранимых данных.</typeparam>
     public class DoubleLinkedListAdt<T> : IListAdt<T>
     {
         private Node<T>? _head;
         private Node<T>? _tail;
-        private static readonly Position<T> _End = new Position<T>(null!);
+        private static readonly Position<T> _end = new Position<T>(null!);
 
-        /// <summary>
-        /// Создаёт новый пустой двусвязный список.
-        /// </summary>
         public DoubleLinkedListAdt()
         {
             _head = null;
@@ -28,345 +20,230 @@ namespace Lab1PD.ListADT
         }
 
         /// <summary>
-        /// Возвращает фиктивную позицию конца списка (используется как "нулевая" позиция).
+        /// 1. Возвращает маркер конца списка.
         /// </summary>
-        public IPosition End() => _End;
+        public IPosition End() => _end;
 
         /// <summary>
-        /// Возвращает позицию первого элемента в списке.
-        /// Если список пуст, возвращает End().
+        /// 2. Проверяет валидность позиции: принадлежность текущему списку и отличие от End.
         /// </summary>
-        public IPosition First() => new Position<T>(_head);
-
-        // ======================== ОПЕРАЦИИ МОДИФИКАЦИИ ========================
-
-        /// <summary>
-        /// Вставляет элемент <paramref name="x"/> перед позицией <paramref name="p"/>.
-        /// Если p = End(), элемент добавляется в конец списка.
-        /// </summary>
-        /// <param name="x">Добавляемое значение.</param>
-        /// <param name="p">Позиция, перед которой выполняется вставка.</param>
-        /// <exception cref="ArgumentNullException">Если позиция равна null.</exception>
-        /// <exception cref="InvalidOperationException">Если произошла ошибка при вставке.</exception>
-        public void Insert(T x, IPosition p)
+        private bool ValidatePosition(IPosition p)
         {
-            // --- Проверяем корректность позиции ---
-            if (!ValidatePosition(p))
-                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
+            // 2.1. Если позиция — конец списка, возвращаем false
+            if (p == _end || p is not Position<T> pos) return false;
             
-            if (p == null)
-                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
-
-            if (p is not Position<T> pos)
-                throw new ArgumentException("Переданная позиция имеет неверный тип.", nameof(p));
-
-            Node<T>? target = pos.Node;
-            Node<T> newNode = new Node<T>(x);
-
-            // =====================================================================
-            //                        1. ВСТАВКА В ПУСТОЙ СПИСОК
-            // =====================================================================
-            if (_head == null)
+            // 2.2. Обход списка с головы
+            Node<T>? current = _head;
+            while (current != null)
             {
-                _head = _tail = newNode;
-                return;
+                // 2.3-2.4. Сравнение узлов
+                if (current == pos.Node) return true;
+                current = current.Next;
             }
-
-            // =====================================================================
-            //            2. target == null → это End() → вставка В КОНЕЦ
-            // =====================================================================
-            if (target == null)
-            {
-                _tail!.Next = newNode;
-                newNode.Previous = _tail;
-                _tail = newNode;
-                return;
-            }
-
-            // =====================================================================
-            //            3. ВСТАВКА ПЕРЕД ПЕРВЫМ ЭЛЕМЕНТОМ (_head)
-            // =====================================================================
-            if (target == _head)
-            {
-                newNode.Next = _head;
-                _head.Previous = newNode;
-                _head = newNode;
-                return;
-            }
-
-            // =====================================================================
-            //                       4. ВСТАВКА В СЕРЕДИНУ
-            // =====================================================================
-            Node<T>? prev = target.Previous;
-
-            newNode.Next = target;
-            newNode.Previous = prev;
-
-            prev!.Next = newNode;
-            target.Previous = newNode;
+            // 2.5. Совпадений не найдено
+            return false;
         }
 
         /// <summary>
-        /// Вставляет элемент <paramref name="p"/> в конец списка./>.
+        /// 3. Устанавливает двустороннюю связь между двумя узлами.
         /// </summary>
-        /// <param name="p">Добавляемое значение.</param>
-        public void Add(T p) => Insert(p, _End);
-        
-        
+        private void LinkNodes(Node<T>? first, Node<T>? second)
+        {
+            if (first != null) first.Next = second;
+            if (second != null) second.Previous = first;
+        }
+
+        /// <summary>
+        /// 4. Вставляет элемент obj в позицию p.
+        /// Если p == End, вставка производится в хвост.
+        /// В остальных случаях данные текущего узла вытесняются в новый узел.
+        /// </summary>
+        public void Insert(T obj, IPosition p)
+        {
+            // --- Сценарий A: Вставка в конец (p == _end) ---
+            if (p == _end)
+            {
+                Node<T> newNode = new Node<T>(obj);
+                // 4.1. Если список пуст
+                if (_head == null)
+                {
+                    _head = newNode;
+                    _tail = newNode;
+                }
+                else
+                {
+                    // 4.2. Связываем хвост с новым узлом и обновляем хвост
+                    LinkNodes(_tail, newNode);
+                    _tail = newNode;
+                }
+                return;
+            }
+
+            // --- Сценарий B: Вставка в существующую позицию ---
+            // 4.1. Валидация
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Передана неверная позиция для вставки.");
+
+            Position<T> pos = (Position<T>)p;
+            Node<T> cur = pos.Node!;
+            
+            // 4.3. Создаем новый узел, в который копируем текущие данные из cur
+            Node<T> newNodeForOldData = new Node<T>(cur.Data!);
+            
+            // 4.4. Перестраиваем связи: ставим новый узел сразу после текущего
+            newNodeForOldData.Next = cur.Next;
+            if (cur.Next != null) cur.Next.Previous = newNodeForOldData;
+            
+            cur.Next = newNodeForOldData;
+            newNodeForOldData.Previous = cur;
+            
+            // 4.5. Заменяем данные в текущем узле на новые
+            cur.Data = obj;
+
+            // 4.6. Если вставляли в хвост, теперь хвостом стал новый узел с "вытесненными" данными
+            if (cur == _tail)
+            {
+                _tail = newNodeForOldData;
+            }
+        }
+
+        /// <summary>
+        /// 5. Находит позицию первого вхождения объекта obj.
+        /// </summary>
+        public IPosition Locate(T obj)
+        {
+            Node<T>? current = _head;
+            while (current != null)
+            {
+                if (Equals(current.Data, obj))
+                    return new Position<T>(current);
+                current = current.Next;
+            }
+            return _end;
+        }
+
+        /// <summary>
+        /// 6. Возвращает данные, хранящиеся в позиции p.
+        /// </summary>
+        public T Retrieve(IPosition p)
+        {
+            if (!ValidatePosition(p))
+                throw new ArgumentException("Позиция не принадлежит списку или является End().");
+            
+            return ((Position<T>)p).Node!.Data!;
+        }
+
+        /// <summary>
+        /// 7. Удаляет узел в позиции p и возвращает позицию следующего за ним элемента.
+        /// </summary>
         public IPosition Delete(IPosition p)
         {
-            // --- Проверяем корректность позиции ---
-            // End() допускается (добавление в конец)
             if (!ValidatePosition(p))
-                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
-            
-            if (p == null)
-                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
+                throw new ArgumentException("Невозможно удалить: невалидная позиция.");
 
-            // Проверка, что позиция принадлежит этому списку и имеет корректный тип
-            if (p is not Position<T> pos)
-                throw new ArgumentException("Позиция не принадлежит списку.", nameof(p));
+            Node<T> nodeToDelete = ((Position<T>)p).Node!;
+            Node<T>? nextNode = nodeToDelete.Next;
 
-            Node<T>? node = pos.Node;
-
-            // ---- НАЧИНАЕТСЯ БЛОК УДАЛЕНИЯ ----
-
-            // Удаление единственного элемента
-            if (node == _head && node == _tail)
+            // --- Сценарий A: Удаление головы ---
+            if (nodeToDelete == _head)
             {
-                _head = _tail = null;
+                if (_head == _tail)
+                {
+                    _head = _tail = null;
+                }
+                else
+                {
+                    _head = _head!.Next;
+                    _head!.Previous = null;
+                }
             }
-            // Удаление первого
-            else if (node == _head)
-            {
-                _head = _head!.Next;
-                _head!.Previous = null;
-            }
-            // Удаление последнего
-            else if (node == _tail)
+            // --- Сценарий B: Удаление хвоста ---
+            else if (nodeToDelete == _tail)
             {
                 _tail = _tail!.Previous;
                 _tail!.Next = null;
             }
-            // Удаление из середины
+            // --- Сценарий C: Удаление из середины ---
             else
             {
-                Node<T>? prev = node.Previous;
-                Node<T>? next = node.Next;
-                prev!.Next = next;
-                next!.Previous = prev;
-            }
-            
-            // Вернуть позицию следующего узла (или End(), если конец)
-            // Нужно получить следующий узел ДО удаления
-            Node<T>? nextNode = pos.Node.Next;
-            return new Position<T>(nextNode); // Если nextNode == null, будет End()
-
-        }
-
-
-        // ======================== ОПЕРАЦИИ ДОСТУПА ========================
-
-        /// <summary>
-        /// Возвращает значение элемента в позиции <paramref name="p"/>.
-        /// </summary>
-        /// <param name="p">Позиция, откуда нужно получить значение.</param>
-        /// <returns>Значение элемента типа T.</returns>
-        /// <exception cref="ArgumentNullException">Если позиция равна null.</exception>
-        /// <exception cref="ArgumentException">Если позиция недопустима или указывает на конец списка.</exception>
-        public T Retrieve(IPosition p)
-        {
-            // --- Проверяем корректность позиции ---
-            // End() допускается (добавление в конец)
-            if (!ValidatePosition(p))
-                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
-            
-            if (p == null)
-                throw new ArgumentNullException(nameof(p), "Позиция не может быть null.");
-
-            if (p is not Position<T> pos)
-                throw new ArgumentException("Переданная позиция имеет неверный тип.", nameof(p));
-
-            if (pos.Node == null)
-                throw new ArgumentException("Невозможно получить значение из позиции End() или недействительной позиции.", nameof(p));
-
-            return pos.Node.Data!;
-        }
-
-
-
-        /// <summary>
-        /// Находит позицию первого элемента, значение которого равно <paramref name="x"/>.
-        /// </summary>
-        /// <param name="x">Искомое значение.</param>
-        /// <returns>Позиция найденного элемента или End(), если элемент не найден.</returns>
-        public IPosition Locate(T x)
-        {
-            if (_head == null)
-            {
-                // Список пустой, сразу возвращаем End()
-                return End();
+                LinkNodes(nodeToDelete.Previous, nodeToDelete.Next);
             }
 
-            Node<T>? current = _head;
-
-            // Проходим по всем узлам
-            while (current != null)
-            {
-                if (Equals(current.Data, x))
-                {
-                    // Элемент найден, возвращаем его позицию
-                    return new Position<T>(current);
-                }
-
-                current = current.Next;
-            }
-
-            // Элемент не найден
-            return End();
+            return nextNode != null ? new Position<T>(nextNode) : _end;
         }
 
-
-        // ======================== НАВИГАЦИЯ ========================
-
         /// <summary>
-        /// Возвращает позицию следующего элемента после <paramref name="p"/>.
+        /// 8. Возвращает следующую позицию.
         /// </summary>
-        /// <param name="p">Текущая позиция.</param>
-        /// <returns>Следующая позиция или End(), если достигнут конец списка.</returns>
         public IPosition Next(IPosition p)
         {
-            // --- Проверяем корректность позиции ---
-            // End() допускается (добавление в конец)
             if (!ValidatePosition(p))
-                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
-            
-            if (p == null)
-                throw new ArgumentNullException(nameof(p));
+                throw new ArgumentException("Невалидная позиция.");
 
-            if (p is not Position<T> pos)
-                throw new ArgumentException("Позиция имеет неверный тип.", nameof(p));
-
-            // P == End() -> Next() = End()
-            if (pos.Node == null)
-                return End();
-
-            // Если следующий узел отсутствует → возвращаем End()
-            if (pos.Node.Next == null)
-                return End();
-
-            return new Position<T>(pos.Node.Next);
+            Node<T> node = ((Position<T>)p).Node!;
+            return node == _tail ? _end : new Position<T>(node.Next);
         }
 
-
-
         /// <summary>
-        /// Возвращает позицию предыдущего элемента перед <paramref name="p"/>.
+        /// 9. Возвращает предыдущую позицию.
         /// </summary>
-        /// <param name="p">Текущая позиция.</param>
-        /// <returns>Предыдущая позиция или End(), если элемент первый.</returns>
         public IPosition Previous(IPosition p)
         {
-            // --- Проверяем корректность позиции ---
             if (!ValidatePosition(p))
-                throw new ArgumentException("Позиция не принадлежит этому списку.", nameof(p));
-            
-            if (p == null)
-                throw new ArgumentNullException(nameof(p));
+                throw new ArgumentException("Невалидная позиция.");
 
-            Position<T>? pos = p as Position<T>;
-            if (pos == null)
-                throw new ArgumentException("Позиция имеет неверный тип.", nameof(p));
+            Node<T> node = ((Position<T>)p).Node!;
+            if (node == _head)
+                throw new InvalidOperationException("Попытка получить Previous для головы списка.");
 
-            // Если позиция = End(), возвращаем хвост (последний элемент)
-            if (pos.Node == null)
-                return _tail == null ? End() : new Position<T>(_tail);
-    
-            return new Position<T>(pos.Node.Previous); 
+            return new Position<T>(node.Previous);
         }
 
-        // ======================== ОБСЛУЖИВАНИЕ ========================
+        /// <summary>
+        /// 10. Возвращает позицию первого элемента.
+        /// </summary>
+        public IPosition First()
+        {
+            return _head == null ? _end : new Position<T>(_head);
+        }
 
         /// <summary>
-        /// Полностью очищает список, удаляя все элементы.
+        /// 11. Очищает список.
         /// </summary>
-        /// <returns>Фиктивную позицию End().</returns>
         public IPosition Makenull()
         {
-            // Если список уже пуст, возвращаем End()
-            if (_head == null && _tail == null)
-                return End();
-
-            // Очищаем список
             _head = null;
             _tail = null;
-
-            // Возвращаем фиктивную позицию End()
-            return End();
+            return _end;
         }
 
-
         /// <summary>
-        /// Печатает содержимое списка в консоль.
-        /// Используется для отладки и визуальной проверки.
+        /// 12. Выводит содержимое списка в формате эл1,\nэл2.
         /// </summary>
         public void PrintList()
         {
-            try
+            Node<T>? current = _head;
+            if (current != null)
             {
-                if (_head == null)
-                {
-                    Console.WriteLine("Список пуст.");
-                    return;
-                }
-
-                Node<T>? current = _head;
-                int i = 1;
+                Console.Write(current.Data);
+                current = current.Next;
                 while (current != null)
                 {
-                    Console.WriteLine($"{i}. {current.Data}");
+                    Console.Write($",\n{current.Data}");
                     current = current.Next;
-                    i++;
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка при выводе списка: {ex.Message}");
-            }
+            Console.WriteLine("");
         }
+
         /// <summary>
-        /// Проверяет, принадлежит ли указанная позиция текущему списку.
-        /// Проходит по всем узлам и ищет совпадение.
+        /// 13. Проверяет, пуст ли список.
         /// </summary>
-        /// <param name="p">Позиция, которую необходимо проверить.</param>
-        /// <returns>
-        /// true — если позиция указывает на существующий узел в списке; 
-        /// false — если позиция недействительна или не принадлежит списку.
-        /// </returns>
-        private bool ValidatePosition(IPosition p)
-        {
-            // Проверка типа
-            if (p is not Position<T> pos)
-                return false;
+        public bool IsEmpty() => _head == null;
 
-            Node<T>? target = pos.Node;
-    
-            // End() всегда допустимая позиция для этого списка
-            if (target == null && p == _End)
-                return true;
-
-            // Проход по списку
-            Node<T>? current = _head;
-            while (current != null)
-            {
-                if (current == target)
-                    return true;
-
-                current = current.Next;
-            }
-
-            return false;
-        }
-
+        /// <summary>
+        /// Обертка для вставки в конец списка.
+        /// </summary>
+        public void Add(T obj) => Insert(obj, _end);
     }
 }

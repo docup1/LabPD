@@ -4,97 +4,29 @@ using Lab1PD.Core;
 
 namespace Lab1PD.Stack.Array
 {
-    /// <summary>
-    /// Реализация абстрактного типа данных (АТД) «Стек» на массиве.
-    /// </summary>
-    /// <typeparam name="T">Тип элементов, хранящихся в стеке.</typeparam>
-    public class StackArray<T> : IStack<T>
+    // Стек на основе массива
+    public class Stack<T>
     {
-        private T[] _items;      // массив для хранения элементов стека
-        private int _top;        // индекс вершины стека (последнего элемента)
-        private int _capacity;   // максимальный размер стека
+        private const int Size = 256;        // Максимальный размер стека
+        private readonly T[] _array = new T[Size];  // Массив для хранения элементов
+        private int _last = -1;              // Указатель на вершину стека
 
-        /// <summary>
-        /// Конструктор. Создаёт пустой стек заданной ёмкости.
-        /// </summary>
-        /// <param name="capacity">Максимальное количество элементов в стеке.</param>
-        public StackArray(int capacity)
-        {
-            _capacity = capacity;
-            _items = new T[capacity];
-            _top = -1;
-        }
+        // Добавление элемента на вершину стека
+        public void Push(T x) => _array[++_last] = x;  // Увеличиваем указатель и сохраняем элемент
 
-        /// <summary>
-        /// Очищает стек.
-        /// </summary>
-        public void MakeNull()
-        {
-            _top = -1;
-        }
+        // Извлечение элемента с вершины
+        public T Pop() => _array[_last--];  // Возвращаем элемент и уменьшаем указатель
 
-        /// <summary>
-        /// Добавляет элемент в вершину стека.
-        /// </summary>
-        /// <param name="x">Элемент для добавления.</param>
-        public void Push(T x)
-        {
-            if (Full())
-                throw new InvalidOperationException("Стек переполнен");
+        // Просмотр вершины без извлечения
+        public T Top() => _array[_last];
+    
+        // Проверка заполненности стека
+        public bool Full() => _last == Size - 1;  // Достигнут конец массива
 
-            _items[++_top] = x;
-        }
+        // Проверка пустоты стека
+        public bool Empty() => _last < 0;  // Указатель ниже начала массива
 
-        /// <summary>
-        /// Удаляет и возвращает элемент из вершины стека.
-        /// </summary>
-        /// <returns>Элемент, удалённый из стека.</returns>
-        public T Pop()
-        {
-            if (Empty())
-                throw new InvalidOperationException("Стек пуст");
-
-            return _items[_top--];
-        }
-
-        /// <summary>
-        /// Возвращает элемент, находящийся на вершине стека, без удаления.
-        /// </summary>
-        public T Top()
-        {
-            if (Empty())
-                throw new InvalidOperationException("Стек пуст");
-
-            return _items[_top];
-        }
-
-        /// <summary>
-        /// Проверяет, пуст ли стек.
-        /// </summary>
-        /// <returns>true, если стек пуст; иначе false.</returns>
-        public bool Empty()
-        {
-            return _top == -1;
-        }
-
-        /// <summary>
-        /// Проверяет, заполнен ли стек.
-        /// </summary>
-        /// <returns>true, если стек заполнен; иначе false.</returns>
-        public bool Full()
-        {
-            return _top == _capacity - 1;
-        }
-
-        /// <summary>
-        /// Печатает содержимое стека (для отладки).
-        /// </summary>
-        public void Print()
-        {
-            Console.Write("Стек: ");
-            for (int i = 0; i <= _top; i++)
-                Console.Write($"{_items[i]} ");
-            Console.WriteLine();
-        }
+        // Очистка стека
+        public void MakeNull() => _last = -1;  // Сбрасываем указатель
     }
 }

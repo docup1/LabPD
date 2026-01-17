@@ -1,125 +1,54 @@
+using Lab1PD.Core;
 
 namespace Lab1PD.Queue.Array
 {
-    /// <summary>
-    /// Реализация абстрактного типа данных (АТД) «Очередь» на массиве.
-    /// 
-    /// Элементы добавляются в конец очереди (Enqueue)
-    /// и извлекаются из начала (Dequeue).
-    /// Используется циклический буфер для эффективного использования памяти.
-    /// </summary>
-    /// <typeparam name="T">Тип элементов, хранящихся в очереди.</typeparam>
-    public class QueueArrayAdt<T>
+    /// <summary>Кольцевая очередь на фиксированном массиве</summary>
+    /// <typeparam name="T">Тип элементов очереди</typeparam>
+    /// <remarks>Использует кольцевой буфер размером 256 элементов</remarks>
+    public class Queue<T>
     {
-        private T[] _items;       // Массив для хранения элементов очереди
-        private int _front;       // Индекс начала очереди
-        private int _rear;        // Индекс конца очереди
-        private int _count;       // Текущее количество элементов
-        private int _capacity;    // Максимальный размер очереди
-
-        /// <summary>
-        /// Конструктор. Создает пустую очередь заданной ёмкости.
-        /// </summary>
-        /// <param name="capacity">Максимальное количество элементов в очереди.</param>
-        public QueueArrayAdt(int capacity)
-        {
-            _capacity = capacity;
-            _items = new T[capacity];
-            _front = 0;
-            _rear = -1;
-            _count = 0;
-        }
-
-        /// <summary>
-        /// Очищает очередь, делая её пустой.
-        /// </summary>
-        public void MakeNull()
-        {
-            _front = 0;
-            _rear = -1;
-            _count = 0;
-        }
-
-        /// <summary>
-        /// Добавляет элемент в конец очереди.
-        /// </summary>
-        /// <param name="x">Элемент, который нужно добавить.</param>
+        private const int Size = 256;               // Фиксированный размер очереди
+        private readonly T[] _array = new T[Size];  // Кольцевой буфер
+        private int _front = 0;                     // Индекс начала очереди
+        private int _rear = Size - 1;               // Индекс конца очереди (предыдущий от первого свободного)
+    
+        /// <summary>Добавляет элемент в конец очереди</summary>
+        /// <param name="x">Элемент для добавления</param>
+        /// <exception cref="InvalidOperationException">Очередь переполнена</exception>
         public void Enqueue(T x)
         {
-            if (Full())
-                throw new InvalidOperationException("Очередь переполнена");
-
-            // Циклическое смещение конца
-            _rear = (_rear + 1) % _capacity;
-            _items[_rear] = x;
-            _count++;
+            _rear = Next(_rear);  // Перемещаем указатель конца
+            _array[_rear] = x;    // Сохраняем элемент
         }
 
-        /// <summary>
-        /// Удаляет и возвращает первый элемент очереди.
-        /// </summary>
-        /// <returns>Удалённый элемент.</returns>
+        /// <summary>Удаляет и возвращает первый элемент очереди</summary>
+        /// <returns>Первый элемент очереди</returns>
+        /// <exception cref="InvalidOperationException">Очередь пуста</exception>
         public T Dequeue()
         {
-            if (Empty())
-                throw new InvalidOperationException("Очередь пуста");
-
-            T value = _items[_front];
-            _front = (_front + 1) % _capacity;
-            _count--;
-            return value;
+            T toReturn = _array[_front];
+            _front = Next(_front);  // Перемещаем указатель начала
+            return toReturn;
         }
 
-        /// <summary>
-        /// Возвращает первый элемент очереди, не удаляя его.
-        /// </summary>
-        /// <returns>Первый элемент очереди.</returns>
-        public T Front()
-        {
-            if (Empty())
-                throw new InvalidOperationException("Очередь пуста");
+        /// <summary>Возвращает первый элемент без удаления</summary>
+        /// <returns>Первый элемент очереди</returns>
+        /// <exception cref="InvalidOperationException">Очередь пуста</exception>
+        public T Front() => _array[_front];
 
-            return _items[_front];
-        }
+        /// <summary>Проверяет, заполнена ли очередь</summary>
+        /// <remarks>Очередь считается заполненной, если свободна только одна ячейка</remarks>
+        public bool Full() => Next(Next(_rear)) == _front;
 
-        /// <summary>
-        /// Проверяет, пуста ли очередь.
-        /// </summary>
-        /// <returns>true, если очередь пуста; иначе false.</returns>
-        public bool Empty()
-        {
-            return _count == 0;
-        }
+        /// <summary>Проверяет, пуста ли очередь</summary>
+        public bool Empty() => Next(_rear) == _front;
 
-        /// <summary>
-        /// Проверяет, заполнена ли очередь.
-        /// </summary>
-        /// <returns>true, если очередь заполнена; иначе false.</returns>
-        public bool Full()
-        {
-            return _count == _capacity;
-        }
+        /// <summary>Очищает очередь</summary>
+        public void MakeNull() => _rear = _front - 1;  // Сбрасываем указатель конца
 
-        /// <summary>
-        /// Печатает текущее содержимое очереди (для отладки).
-        /// </summary>
-        public void Print()
-        {
-            Console.Write("Очередь: ");
-            for (int i = 0; i < _count; i++)
-            {
-                int index = (_front + i) % _capacity;
-                Console.Write($"{_items[index]} ");
-            }
-            Console.WriteLine();
-        }
-
-        /// <summary>
-        /// Возвращает текущее количество элементов в очереди.
-        /// </summary>
-        public int Count()
-        {
-            return _count;
-        }
+        /// <summary>Вычисляет следующий индекс в кольцевом буфере</summary>
+        /// <param name="pos">Текущий индекс</param>
+        /// <returns>Следующий индекс (с зацикливанием)</returns>
+        private int Next(int pos) => (pos + 1) % Size;
     }
 }

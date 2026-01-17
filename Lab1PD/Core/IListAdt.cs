@@ -36,7 +36,7 @@ namespace Lab1PD.Core
         /// Вставляет элемент <paramref name="p"/> в конец списка./>.
         /// </summary>
         /// <param name="p">Добавляемое значение.</param>
-        void Add(T p);
+        // void Add(T p);
         
         /// <summary>
         /// Удаляет элемент, находящийся в указанной позиции <paramref name="p"/>.
@@ -115,9 +115,5 @@ namespace Lab1PD.Core
         /// </summary>
         void PrintList();
         
-        /// <summary>
-        /// Возвращает количество элементов списка.
-        /// </summary>
-        // int Count();
     }
 }

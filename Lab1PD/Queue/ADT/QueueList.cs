@@ -13,7 +13,7 @@ namespace Lab1PD.Queue.List
     
         /// <summary>Добавляет элемент в конец очереди</summary>
         /// <param name="x">Элемент для добавления</param>
-        public void Enqueue(T x) => _list.Add(x);
+        public void Enqueue(T x) => _list.Insert(x, _list.End());
 
         /// <summary>Удаляет и возвращает первый элемент очереди</summary>
         /// <returns>Первый элемент очереди</returns>
