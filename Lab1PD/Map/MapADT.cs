@@ -12,53 +12,46 @@ namespace Lab1PD.Map
     {
         // Головной элемент односвязного списка
         private Node? _head;
-
+        
         /// <summary>
         /// Находит узел с заданным ключом в списке.
-        /// Если узел не найден, возвращает последний узел для оптимизации вставки.
         /// </summary>
         /// <param name="key">Ключ для поиска</param>
-        /// <param name="foundNode">
-        /// Выходной параметр:
-        /// - Если ключ найден: ссылка на найденный узел
-        /// - Если ключ не найден: ссылка на последний узел списка (или null для пустого списка)
-        /// </param>
         /// <returns>
-        /// true - если узел с заданным ключом найден,
-        /// false - если узел не найден
+        /// - Если ключ найден: найденный узел
+        /// - Если ключ не найден: null
         /// </returns>
-        private bool FindNodeByKey(TKey key, ref Node? foundNode)
+        private Node? FindNodeByKey(TKey key)
         {
             Node? currentNode = _head;
-            Node? previousNode = null;
             
-            // Проход по всем узлам списка
             while (currentNode != null)
             {
-                // Сравнение ключей (использует метод Equals)
                 if (currentNode.Key.Equals(key))
                 {
-                    foundNode = currentNode;  // Узел найден
-                    return true;
+                    return currentNode;
                 }
-
-                // Переход к следующему узлу
-                previousNode = currentNode;
                 currentNode = currentNode.Next;
             }
-
-            // Ключ не найден - возвращаем последний узел
-            foundNode = previousNode;
-            return false;
+            
+            return null;
         }
 
         /// <summary>
-        /// Проверяет, пуст ли словарь.
+        /// Находит последний узел в списке.
         /// </summary>
-        /// <returns>true - если словарь пуст, false - в противном случае</returns>
-        private bool IsEmpty()
+        /// <returns>Последний узел списка или null, если список пуст</returns>
+        private Node? FindLastNode()
         {
-            return _head is null;
+            if (_head == null)
+                return null;
+                
+            Node? currentNode = _head;
+            while (currentNode.Next != null)
+            {
+                currentNode = currentNode.Next;
+            }
+            return currentNode;
         }
         
         /// <summary>
@@ -70,25 +63,30 @@ namespace Lab1PD.Map
         /// <param name="value">Значение, ассоциированное с ключом</param>
         public void Assign(TKey key, TValue value)
         {
-            // Обработка случая пустого списка
-            if (IsEmpty())
-            {
-                _head = new Node(key, value, null);
-                return;
-            }
-
-            Node? targetNode = null;
+            // Ищем узел с таким ключом
+            Node? existingNode = FindNodeByKey(key);
             
-            // Поиск узла с заданным ключом
-            if (FindNodeByKey(key, ref targetNode))
+            if (existingNode != null)
             {
                 // Ключ найден - обновляем значение
-                targetNode!.Value = value;
-                return;
+                existingNode.Value = value;
             }
-
-            // Ключ не найден - добавляем новый узел в конец списка
-            targetNode!.Next = new Node(key, value, null);
+            else
+            {
+                // Ключ не найден - добавляем новый узел в КОНЕЦ списка
+                Node? lastNode = FindLastNode();
+                
+                if (lastNode == null)
+                {
+                    // Список пустой - создаем голову
+                    _head = new Node(key, value, null);
+                }
+                else
+                {
+                    // Добавляем после последнего узла
+                    lastNode.Next = new Node(key, value, null);
+                }
+            }
         }
 
         /// <summary>
@@ -105,15 +103,15 @@ namespace Lab1PD.Map
         /// </returns>
         public bool Compute(TKey key, ref TValue value)
         {
-            Node? targetNode = null;
+            Node? foundNode = FindNodeByKey(key);
             
-            // Поиск узла с заданным ключом
-            if (!FindNodeByKey(key, ref targetNode))
-                return false;
+            if (foundNode != null)
+            {
+                value = foundNode.Value;
+                return true;
+            }
             
-            // Возврат значения через выходной параметр
-            value = targetNode!.Value;
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -133,19 +131,17 @@ namespace Lab1PD.Map
             Console.Write("{");
             
             Node? currentNode = _head;
+            bool first = true;
 
-            // Вывод первого элемента (без запятой)
-            if (currentNode != null)
+            while (currentNode != null)
             {
-                Console.Write(currentNode);
-                currentNode = currentNode.Next;
-                
-                // Вывод остальных элементов (с запятыми)
-                while (currentNode != null)
+                if (!first)
                 {
-                    Console.Write($", {currentNode}");
-                    currentNode = currentNode.Next;
+                    Console.Write(", ");
                 }
+                Console.Write(currentNode);
+                first = false;
+                currentNode = currentNode.Next;
             }
 
             Console.WriteLine("}");

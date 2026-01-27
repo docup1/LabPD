@@ -8,7 +8,10 @@ namespace Lab1PD
 {
     internal class Program
     {
-        // Метод удаления дубликатов для задания 1
+        /// <summary>
+        /// Метод удаления дубликатов из списка.
+        /// </summary>
+        /// <param name="list">Список, из которого нужно удалить дубликаты.</param>
         private static void RemoveDuplicates(IListAdt<Person> list)
         {
             IPosition p = list.First();
@@ -34,7 +37,11 @@ namespace Lab1PD
             }
         }
 
-        // Метод конвертации строки в char[]
+        /// <summary>
+        /// Метод конвертации строки в массив символов.
+        /// </summary>
+        /// <param name="str">Строка для конвертации.</param>
+        /// <returns>Массив символов.</returns>
         static char[] ToCharArray(string str)
         {
             char[] result = new char[Math.Min(str.Length + 1, 50)]; // Ограничение длины
@@ -57,7 +64,6 @@ namespace Lab1PD
                 Console.WriteLine("2 - Stack, Queue, Map (коллекции)");
                 Console.WriteLine("3 - Hashing (открытое/закрытое хеширование)");
                 Console.WriteLine("4 - M2M (многокурсовая система)");
-
                 Console.WriteLine("5 - Выход");
                 Console.Write("Ваш выбор: ");
 
@@ -91,11 +97,13 @@ namespace Lab1PD
                 }
 
                 Console.WriteLine("\nНажмите любую клавишу для продолжения...");
-                Console.ReadKey();
+                Console.ReadLine();
             }
         }
 
-        // Демонстрация задания 1 - ADT List
+        /// <summary>
+        /// Демонстрация задания 1 - ADT List.
+        /// </summary>
         private static void DemoListADT()
         {
             Console.WriteLine("\n=== Задание 1: ADT List - Удаление дубликатов ===");
@@ -138,88 +146,116 @@ namespace Lab1PD
             curList.PrintList();
         }
 
-        // Демонстрация задания 2 - Stack, Queue, Map
-        private static void DemoCollections()
+        /// <summary>
+/// Демонстрация задания 2 - Stack, Queue, Map.
+/// </summary>
+private static void DemoCollections()
+{
+    Console.WriteLine("\n=== Задание 2: Stack, Queue, Map ===");
+
+    MapADT<char, int> map = new MapADT<char, int>();
+    
+    // Создаем все коллекции
+    var arrQueue = new Lab1PD.Queue.Array.Queue<char>();
+    var arrStack = new Lab1PD.Stack.Array.Stack<char>();
+    var linkQueue = new Lab1PD.Queue.Linked.Queue<char>();
+    var linkStack = new Lab1PD.Stack.Linked.Stack<char>();
+    var listQueue = new Lab1PD.Queue.List.Queue<char>();
+    var adtStack = new Lab1PD.Stack.ADT.Stack<char>();
+
+    string testString = "Hello World";
+    Console.WriteLine($"Исходная строка: {testString}");
+    Console.WriteLine($"Длина строки: {testString.Length} символов");
+
+    // Заполняем все коллекции и строим частотный словарь
+    int position = 0;
+    foreach (char ch in testString)
+    {
+        // ДЛЯ ЧАСТОТНОГО СЛОВАРЯ (подсчет количества)
+        int currentCount = 0;
+        if (map.Compute(ch, ref currentCount))
         {
-            Console.WriteLine("\n=== Задание 2: Stack, Queue, Map ===");
-
-            MapADT<char, int> map = new MapADT<char, int>();
-            Lab1PD.Queue.Array.Queue<char> arrQueue = new Lab1PD.Queue.Array.Queue<char>();
-            Lab1PD.Stack.Array.Stack<char> arrStack = new Lab1PD.Stack.Array.Stack<char>();
-
-            Lab1PD.Queue.Linked.Queue<char> linkQueue = new Lab1PD.Queue.Linked.Queue<char>();
-            Lab1PD.Stack.Linked.Stack<char> linkStack = new Lab1PD.Stack.Linked.Stack<char>();
-
-            Lab1PD.Queue.List.Queue<char> listQueue = new Lab1PD.Queue.List.Queue<char>();
-            Lab1PD.Stack.ADT.Stack<char> adtStack = new Lab1PD.Stack.ADT.Stack<char>();
-
-            string testString = "Hello World";
-            char[] arr = testString.ToCharArray();
-
-            Console.WriteLine($"Исходная строка: {testString}");
-            Console.WriteLine($"Длина строки: {testString.Length} символов");
-
-            int cur = 0;
-
-            // Заносим все символы в коллекции
-            foreach (var ch in arr)
-            {
-                map.Assign(ch, cur);
-                arrQueue.Enqueue(ch);
-                arrStack.Push(ch);
-                linkQueue.Enqueue(ch);
-                linkStack.Push(ch);
-                listQueue.Enqueue(ch);
-                adtStack.Push(ch);
-                cur++;
-            }
-
-            Console.WriteLine("\n1. Отображение (частотный словарь символов):");
-            map.PrintList();
-
-            Console.WriteLine("\n2.1. Очередь (На массиве):");
-            Console.Write("   ");
-            while (!arrQueue.Empty())
-            {
-                Console.Write(arrQueue.Dequeue());
-            }
-
-            Console.WriteLine("\n2.2. Очередь (На односвязном списке):");
-            Console.Write("   ");
-            while (!linkQueue.Empty())
-            {
-                Console.Write(linkQueue.Dequeue());
-            }
-            Console.WriteLine("\n2.3. Очередь (На ATD списке):");
-            Console.Write("   ");
-            while (!listQueue.Empty())
-            {
-                Console.Write(listQueue.Dequeue());
-            }
-
-            Console.WriteLine("\n\n3.1. Стек (На массиве):");
-            Console.Write("   ");
-            while (!arrStack.Empty())
-            {
-                Console.Write(arrStack.Pop());
-            }
-            Console.WriteLine("\n3.2. Стек (На односвязном списке):");
-            Console.Write("   ");
-            while (!linkStack.Empty())
-            {
-                Console.Write(linkStack.Pop());
-            }
-
-            Console.WriteLine("\n3.3. Стек (На ATD списке):");
-            Console.Write("   ");
-            while (!adtStack.Empty())
-            {
-                Console.Write(adtStack.Pop());
-            }
-            Console.WriteLine();
+            // Если символ уже есть в словаре, увеличиваем счетчик
+            map.Assign(ch, currentCount + 1);
+        }
+        else
+        {
+            // Если символа нет в словаре, добавляем с начальным счетчиком 1
+            map.Assign(ch, 1);
         }
 
-        // Демонстрация задания 3 - M2M (MultiList)
+        // ДЛЯ СЛОВАРЯ ПОЗИЦИЙ (первая позиция) - раскомментировать, если нужно
+        // int currentValue = 0;
+        // if (!map.Compute(ch, ref currentValue)) // Если ключ не найден
+        // {
+        //     map.Assign(ch, position); // Только первая позиция
+        // }
+
+        // Добавляем во все очереди
+        arrQueue.Enqueue(ch);
+        linkQueue.Enqueue(ch);
+        listQueue.Enqueue(ch);
+        
+        // Добавляем во все стеки
+        arrStack.Push(ch);
+        linkStack.Push(ch);
+        adtStack.Push(ch);
+        
+        position++;
+    }
+
+    // Выводим Map в текстовом представлении
+    Console.WriteLine("\n1. Отображение (частотный словарь символов):");
+    Console.Write("   ");
+    map.PrintList();  // Вызовет метод PrintList из класса MapADT
+
+    Console.WriteLine("\n2.1. Очередь (На массиве):");
+    Console.Write("   ");
+    while (!arrQueue.Empty())
+    {
+        Console.Write(arrQueue.Dequeue());
+    }
+
+    Console.WriteLine("\n2.2. Очередь (На односвязном списке):");
+    Console.Write("   ");
+    while (!linkQueue.Empty())
+    {
+        Console.Write(linkQueue.Dequeue());
+    }
+    
+    Console.WriteLine("\n2.3. Очередь (На ATD списке):");
+    Console.Write("   ");
+    while (!listQueue.Empty())
+    {
+        Console.Write(listQueue.Dequeue());
+    }
+
+    Console.WriteLine("\n\n3.1. Стек (На массиве):");
+    Console.Write("   ");
+    while (!arrStack.Empty())
+    {
+        Console.Write(arrStack.Pop());
+    }
+    
+    Console.WriteLine("\n3.2. Стек (На односвязном списке):");
+    Console.Write("   ");
+    while (!linkStack.Empty())
+    {
+        Console.Write(linkStack.Pop());
+    }
+
+    Console.WriteLine("\n3.3. Стек (На ATD списке):");  
+    Console.Write("   ");
+    while (!adtStack.Empty())
+    {
+        Console.Write(adtStack.Pop());
+    }
+    Console.WriteLine();
+}
+
+        /// <summary>
+        /// Демонстрация задания 3 - M2M (MultiList).
+        /// </summary>
         private static void DemoMultiList()
         {
             Console.WriteLine("\n=== Задание 3: M2M - Многокурсовая система ===");
@@ -227,49 +263,60 @@ namespace Lab1PD
             var db = new MultiList();
 
             Console.WriteLine("\n1. Добавление студентов и курсов");
-            db.AddNewStudent("Vlad");
-            db.AddNewStudent("Alina");
-            db.AddNewStudent("John");
-            db.AddNewCourse("Math");
-            db.AddNewCourse("Programming");
-            db.AddNewCourse("Physics");
+            db.AddNewStudent(ToCharArray("Vlad"));
+            db.AddNewStudent(ToCharArray("Alina"));
+            db.AddNewStudent(ToCharArray("John"));
+            db.AddNewCourse(ToCharArray("Math"));
+            db.AddNewCourse(ToCharArray("Programming"));
+            db.AddNewCourse(ToCharArray("Physics"));
 
             Console.WriteLine("\n2. Запись студентов на курсы");
-            db.AddStudentToCourse("Vlad", "Math");
-            db.AddStudentToCourse("Vlad", "Programming");
-            db.AddStudentToCourse("Alina", "Math");
-            db.AddStudentToCourse("John", "Physics");
-            db.AddStudentToCourse("John", "Programming");
+            db.AddStudentToCourse(ToCharArray("Vlad"), ToCharArray("Math"));
+            db.AddStudentToCourse(ToCharArray("Vlad"), ToCharArray("Programming"));
+            db.AddStudentToCourse(ToCharArray("Alina"), ToCharArray("Math"));
+            db.AddStudentToCourse(ToCharArray("John"), ToCharArray("Physics"));
+            db.AddStudentToCourse(ToCharArray("John"), ToCharArray("Programming"));
 
             Console.WriteLine("\n3. Курсы студента Vlad:");
-            db.PrintCoursesOfStudent("Vlad");
+            db.PrintCoursesOfStudent(ToCharArray("Vlad"));
 
             Console.WriteLine("\n4. Курсы студента Alina:");
-            db.PrintCoursesOfStudent("Alina");
+            db.PrintCoursesOfStudent(ToCharArray("Alina"));
 
             Console.WriteLine("\n5. Курсы студента John:");
-            db.PrintCoursesOfStudent("John");
+            db.PrintCoursesOfStudent(ToCharArray("John"));
 
             Console.WriteLine("\n6. Студенты на курсе Math:");
-            db.PrintStudentsOfCourse("Math");
+            db.PrintStudentsOfCourse(ToCharArray("Math"));
 
             Console.WriteLine("\n7. Студенты на курсе Programming:");
-            db.PrintStudentsOfCourse("Programming");
+            db.PrintStudentsOfCourse(ToCharArray("Programming"));
 
-            Console.WriteLine("\n8. Удаление студента Vlad из курса Programming:");
-            db.RemoveStudentFromCourse("Vlad", "Programming");
-            db.PrintCoursesOfStudent("Vlad");
+            Console.WriteLine("\n8. Удаление студента John из курса Programming:");
+            db.RemoveStudentFromCourse(ToCharArray("John"), ToCharArray("Programming"));
+            db.PrintCoursesOfStudent(ToCharArray("John"));
 
             Console.WriteLine("\n9. Студенты на курсе Programming после удаления:");
-            db.PrintStudentsOfCourse("Programming");
+            db.PrintStudentsOfCourse(ToCharArray("Programming"));
+            
+            
+            Console.WriteLine("\n10. Удаление студента со всех курсов:");
+            db.RemoveStudentFromCourse(ToCharArray("John"), ToCharArray("Physics"));
+
+            db.PrintCoursesOfStudent(ToCharArray("John"));
+            
+            Console.WriteLine("\n11. Студенты на курсе Programming после удаления:");
+            db.PrintStudentsOfCourse(ToCharArray("Programming"));
         }
 
-        // Демонстрация задания 4 - Hashing
+        /// <summary>
+        /// Демонстрация задания 4 - Hashing.
+        /// </summary>
         private static void DemoHashing()
         {
             Console.WriteLine("\n=== Задание 4: Hashing - Система классификации ===");
 
-            OpenHashedDictionary goodGuys = new OpenHashedDictionary();
+            CloseHashedDictionary goodGuys = new CloseHashedDictionary();
             CloseHashedDictionary badGuys = new CloseHashedDictionary();
 
             Console.WriteLine("Команды имитируются автоматически...\n");
@@ -278,17 +325,13 @@ namespace Lab1PD
             string[] commands =
             {
                 "F Batman",
-                "F Superman",
-                "U Joker",
-                "U LexLuthor",
-                "? Batman",
-                "? Joker",
-                "F Joker",
+                "F Btaman",
                 "P",
-                "? Penguin",
+                "U Btaman",
                 "U Batman",
-                "P",
-                "E"
+
+                "P"
+
             };
 
             foreach (string input in commands)

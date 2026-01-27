@@ -8,7 +8,7 @@ namespace Lab1PD.Hashing
     /// </summary>
     public class CloseHashedDictionary
     {
-        private const int TableSize = 256;
+        private const int TableSize = 10;
         
         // Основной массив для хранения данных (массивов символов)
         private readonly char[]?[] _buckets = new char[TableSize][];

@@ -1,13 +1,12 @@
 namespace Lab1PD.Core.ManyToMany;
 
-internal class StudentNode : IDefaultNode
+public class StudentNode : Base
 {
-    public bool HasNext { get; } = false;
     public char[] Name = new char[NameSize + 1];
     public const int NameSize = 15;
     public LinkNode? Course { get; set; }
 
-    public StudentNode(string name)
+    public StudentNode(char[] name)
     {
         int length = int.Min(name.Length, NameSize);
         

@@ -9,7 +9,7 @@ namespace Lab1PD.Hashing
     public class OpenHashedDictionary
     {
         // Константа размера таблицы (фиксирована по условию задачи)
-        private const int TableSize = 256;
+        private const int TableSize = 10;
 
         // Массив "корзин" (buckets). Каждый элемент — это голова связного списка.
         private readonly Node?[] _buckets = new Node[TableSize];
